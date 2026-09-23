@@ -1,4 +1,4 @@
-"""End-to-end CLI runs on the fake API: analyze -> follow-up -> show -> report."""
+"""End-to-end CLI runs on the fake API (tests/fake_api.py): analyze -> follow-up -> show -> report."""
 import json
 import re
 
@@ -17,7 +17,7 @@ def test_full_flow(tmp_path, capsys, fake_api):
                     "Intermittent fasting grow", "--langs", "pl,cs", "--out", str(tmp_path))
     assert code == 0
     r = json.loads(out)
-    assert r["demo_data"] is True
+    assert "demo_data" not in r and "warning" not in r
     assert {s["lang"] for s in r["series"]} == {"pl", "cs"}
     assert all(s["verdict"] == "growing" for s in r["series"])
     assert "_monthly" not in out  # compact output for the agent
@@ -52,7 +52,6 @@ def test_headlines_follow_ui_lang(tmp_path, capsys, fake_api):
             "--langs", "uk", "--out", str(tmp_path)]
     r = json.loads(run(capsys, *args)[1])
     assert "довіра до висновку" in r["headlines"][0]
-    assert "СИНТЕТИЧНІ" in r["warning"]
     assert any("Гіпотеза для перевірки" in c for c in r["answer_checklist"])
     r = json.loads(run(capsys, *args, "--ui-lang", "en")[1])
     assert "confidence" in r["headlines"][0] and not re.search("[а-я]", r["headlines"][0])
@@ -90,11 +89,11 @@ def test_check_answer(tmp_path, capsys, fake_api, monkeypatch):
     bad = check("Інтерес до астрономії в україномовній Wikipedia спадає на протязі двох "
                 "років, бо школярі втратили інтерес до науки.")
     assert not bad["ok"]
-    assert len(bad["missing"]) == 5  # confidence, caveat, validation, demo, chart path
+    assert len(bad["missing"]) == 4  # confidence, caveat, validation, chart path
     assert any("на протязі" in w for w in bad["language_warnings"])
     assert bad["hints"] and "check-answer again" in bad["tell_agent"]
 
-    good = check("Це синтетичні демо-дані. В україномовній Вікіпедії інтерес до теми "
+    good = check("В україномовній Вікіпедії інтерес до теми "
                  "«Astronomy» спадає: тренд −14% на рік. Довіра до висновку висока. "
                  "Перегляди статей показують інтерес, а не готовність платити, тому "
                  "наступний крок — опитування. Графік: /tmp/out/chart-1.png")

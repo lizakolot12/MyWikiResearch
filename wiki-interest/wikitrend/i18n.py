@@ -105,7 +105,6 @@ TEXT = {
         "per_million": "{pm:.0f} per million",
         "confidence": "confidence {c}",
         "agreement": "{up} up, {down} down, {flat} flat/unclear of {n} topics",
-        "demo": "SYNTHETIC DEMO DATA (not real Wikipedia): tell the user.",
     },
     "uk": {
         "no_article": "{id}: СТАТТІ НЕМАЄ в цьому мовному розділі (виміряти інтерес "
@@ -118,8 +117,6 @@ TEXT = {
         "confidence": "довіра до висновку {c}",
         "agreement": "зростання: {up}, спад: {down}, без чіткого тренду: {flat}; "
                      "усього тем: {n}",
-        "demo": "СИНТЕТИЧНІ ДЕМО-ДАНІ (не справжня Вікіпедія): обов'язково скажи про це "
-                "користувачеві.",
     },
 }
 
@@ -148,8 +145,6 @@ SELF_CHECK = ("LAST STEP, mandatory: pass your full draft answer to `check-answe
               "(heredoc, see SKILL.md), fix what it reports, then send")
 for _items in CHECKLIST.values():
     _items.append(SELF_CHECK)
-DEMO_CHECK = {"en": "say the data is SYNTHETIC DEMO DATA",
-              "uk": "say the data is synthetic: «це синтетичні демо-дані»"}
 
 
 def lang_or_en(lang: str) -> str:

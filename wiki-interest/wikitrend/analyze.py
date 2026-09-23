@@ -6,9 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 from pathlib import Path
 
-from . import api
 from .api import WikiClient, month_end
-from .i18n import CHECKLIST, DEMO_CHECK, TEXT, headline, lang_or_en, reason_text
+from .i18n import CHECKLIST, TEXT, headline, lang_or_en, reason_text
 from .metrics import add_months, analyze_series
 from .resolve import resolve_topic
 
@@ -96,9 +95,6 @@ def run_analysis(client: WikiClient, topics: list[str], langs: list[str], months
                     "order": [f"{s['id']} ({s[key]})" for s in ranked]},
         "api_requests": client.requests_made,
     }
-    if api.FAKE:
-        run["demo_data"] = True
-        run["warning"] = "SYNTHETIC DEMO DATA (not real Wikipedia): tell the user."
     return run
 
 
@@ -169,11 +165,8 @@ def compact(run: dict, lang: str = "en") -> dict:
     """
     lang = lang_or_en(lang)
     out = {"headlines": [headline(s, lang) for s in run.get("combined", []) + run["series"]],
-           "answer_checklist": CHECKLIST[lang] + ([DEMO_CHECK[lang]]
-                                                  if run.get("demo_data") else [])}
+           "answer_checklist": CHECKLIST[lang]}
     out.update({k: v for k, v in run.items() if k not in ("series", "topics", "combined")})
-    if run.get("demo_data"):
-        out["warning"] = TEXT[lang]["demo"]
     out["topics"] = [{k: v for k, v in t.items() if k != "titles"} for t in run["topics"]]
 
     def strip(s: dict) -> dict:

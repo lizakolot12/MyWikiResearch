@@ -45,7 +45,6 @@ T = {
             "всього мовного розділу.",
         ],
         "yes": "враховано", "no": "не враховано",
-        "demo": "ДЕМО-ДАНІ: синтетичні ряди, не реальна Вікіпедія",
     },
     "en": {
         "subtitle": "Wikipedia · period {window} · languages: {langs} · human views (bots excluded)",
@@ -71,7 +70,6 @@ T = {
             "between trend and YoY, and by edition-wide traffic changes.",
         ],
         "yes": "included", "no": "not included",
-        "demo": "DEMO DATA: synthetic series, not real Wikipedia",
     },
 }
 LINE = 0.0145          # figure-fraction height of one 8.5pt text line on A4
@@ -131,8 +129,6 @@ def build_pdf(run: dict, out: Path, title: str, summary: str = "",
     y -= 0.004
     langs = ", ".join(dict.fromkeys(s["lang"] for s in run["series"]))
     text(t["subtitle"].format(window=run["window"], langs=langs), 8.5, color=INK2)
-    if run.get("demo_data"):
-        text(t["demo"], 9, "bold", color="#e34948")
 
     if summary:
         heading(t["summary"])

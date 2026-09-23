@@ -2,7 +2,7 @@
 
 Checks what cheap models most often get wrong in eval runs: language (see
 lang_check.py) and the mandatory parts of an answer (confidence, the
-interest-is-not-demand caveat, validation steps, demo-data notice, chart/PDF
+interest-is-not-demand caveat, validation steps, chart/PDF
 path). Pattern checks only: they catch omissions, they do not grade reasoning.
 """
 from __future__ import annotations
@@ -25,10 +25,6 @@ REQUIRED = [
      r"опитуван|тест|інтерв'ю|інтервʼю|перевір|survey|test|interview|validat",
      "наступний крок перевірки (опитування, тестова сторінка, рекламний тест)",
      "a validation step (survey, landing-page or ad test)"),
-    ("demo", lambda run: bool(run and run.get("demo_data")),
-     r"демо|синтет|demo|synthetic",
-     "що це синтетичні демо-дані, а не справжня Вікіпедія",
-     "that this is SYNTHETIC DEMO DATA, not real Wikipedia"),
     ("path", lambda run: bool(run and run.get("chart")),
      r"\.png|\.pdf",
      "шлях до графіка (поле chart) або PDF",

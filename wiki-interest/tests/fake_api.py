@@ -1,7 +1,4 @@
-"""Deterministic fake Wikimedia API, used by tests and offline demos.
-
-Enabled only with WIKITREND_FAKE_API=1. Every result produced in this mode is
-marked "demo_data": true — never present it as real Wikipedia data.
+"""Deterministic fake Wikimedia API for tests (see the `fake_api` fixture in conftest.py).
 
 Responses mimic the real endpoints' JSON shape. Series properties come from a
 hash of (lang, title), except for a few special words in the topic:

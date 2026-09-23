@@ -5,9 +5,10 @@ Each case runs in a fresh temp workspace with the skill installed at
 .claude/skills/wiki-interest, so the agent discovers it as a project skill.
 
   python evals/run_evals.py --model claude-haiku-4-5-20251001            # real Wikimedia API
-  python evals/run_evals.py --model claude-haiku-4-5-20251001 --fake     # offline synthetic API
   python evals/run_evals.py --only fasting_pl_cs --keep                  # keep workspace
-  python evals/run_evals.py --fake --judge claude-sonnet-5               # + LLM rubric grading
+  python evals/run_evals.py --judge claude-sonnet-5                      # + LLM rubric grading
+
+Needs network access to wikimedia.org and wikidata.org (evals use the real API only).
 
 Writes evals/results/<timestamp>.json with per-check results, turns, cost and the answer.
 Requires: `claude` CLI logged in, pyyaml.
@@ -126,7 +127,7 @@ def analyze_cmds(calls) -> list[str]:
             and " analyze" in c["input"].get("command", "")]
 
 
-def score(res: dict, checks: dict, ws: Path, fake: bool) -> dict:
+def score(res: dict, checks: dict, ws: Path) -> dict:
     calls, answer = res["calls"], res["answer"].lower()
     cmds = analyze_cmds(calls)
     out = {}
@@ -154,8 +155,6 @@ def score(res: dict, checks: dict, ws: Path, fake: bool) -> dict:
         out["pdf"] = any(ws.rglob("*.pdf"))
     if "max_turns" in checks:
         out["max_turns"] = (res.get("turns") or 99) <= checks["max_turns"]
-    if fake:
-        out["mentions_demo"] = any(s in answer for s in ("demo", "демо", "синтет", "synthetic"))
     out["self_checked"] = any(c["tool"] == "Bash" and "check-answer" in
                               c["input"].get("command", "") for c in calls)
     if is_ukrainian(res["answer"]):  # Russianisms, calques, stray English words
@@ -166,7 +165,6 @@ def score(res: dict, checks: dict, ws: Path, fake: bool) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="claude-haiku-4-5-20251001")
-    ap.add_argument("--fake", action="store_true", help="use the synthetic offline API")
     ap.add_argument("--only", help="run one case id (and its follow-ups)")
     ap.add_argument("--keep", action="store_true", help="keep workspaces")
     ap.add_argument("--judge", help="model that grades answers against the tool output")
@@ -180,13 +178,11 @@ def main() -> int:
         ws = Path(tempfile.mkdtemp(prefix=f"wi-eval-{case['id']}-"))
         install_skill(ws)
         env = {**os.environ, "WIKITREND_CACHE_DIR": str(ws / ".wi-cache")}
-        if a.fake:
-            env["WIKITREND_FAKE_API"] = "1"
         steps = [(case, False)] + ([(follow[case["id"]], True)] if case["id"] in follow else [])
         for step, cont in steps:
             print(f"== {step['id']} ...", flush=True)
             res = run_agent(ws, step["prompt"], a.model, env, cont)
-            checks = score(res, step["checks"], ws, a.fake)
+            checks = score(res, step["checks"], ws)
             notes = ""
             if a.judge:
                 grades = judge(res, a.judge)
@@ -211,8 +207,8 @@ def main() -> int:
 
     out_dir = Path(__file__).parent / "results"
     out_dir.mkdir(exist_ok=True)
-    path = out_dir / f"{time.strftime('%Y%m%d-%H%M%S')}-{a.model}{'-fake' if a.fake else ''}.json"
-    path.write_text(json.dumps({"model": a.model, "fake": a.fake, "results": results},
+    path = out_dir / f"{time.strftime('%Y%m%d-%H%M%S')}-{a.model}.json"
+    path.write_text(json.dumps({"model": a.model, "results": results},
                                ensure_ascii=False, indent=1))
     n = sum(r["passed"] for r in results)
     print(f"\n{n}/{len(results)} passed -> {path}")

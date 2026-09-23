@@ -67,9 +67,7 @@ def topics_arg(values: list[str]) -> list[str]:
 def doctor(client: WikiClient, cache: Cache) -> dict:
     from datetime import date
 
-    from wikitrend import api
-    out = {"python": sys.version.split()[0], "cache": cache.stats()["path"],
-           "demo_mode": api.FAKE}
+    out = {"python": sys.version.split()[0], "cache": cache.stats()["path"]}
     try:
         import matplotlib
         import numpy
@@ -166,8 +164,6 @@ def main(argv=None) -> int:
                    "tell_user": "Give the user this PDF path and summarize the findings "
                                 "with verdicts and confidence; run check-answer on that "
                                 "answer before sending it."}
-            if run.get("demo_data"):
-                res["tell_user"] += " Say that the report uses SYNTHETIC DEMO DATA."
             if a.ui_lang == "uk":
                 warnings = check_uk("\n".join([a.title, a.summary, *a.rec, *a.assumption]),
                                     run_words(run))

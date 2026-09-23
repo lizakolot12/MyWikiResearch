@@ -6,7 +6,6 @@ series are fetched incrementally, metadata lookups are cached for 30 days.
 from __future__ import annotations
 
 import calendar
-import os
 import time
 from datetime import date, timedelta
 from urllib.parse import quote
@@ -21,7 +20,6 @@ USER_AGENT = (
 PAGEVIEWS = "https://wikimedia.org/api/rest_v1/metrics/pageviews"
 WIKIDATA = "https://www.wikidata.org/w/api.php"
 DATA_START = date(2015, 7, 1)  # first day of the pageviews API (agent=user)
-FAKE = os.environ.get("WIKITREND_FAKE_API") == "1"
 
 
 class ApiError(RuntimeError):
@@ -34,10 +32,6 @@ _session.headers["User-Agent"] = USER_AGENT
 
 def http_get_json(url: str, params: dict | None = None):
     """GET JSON with retries. Returns None on 404 (no data for that article/range)."""
-    if FAKE:
-        from . import _fake
-
-        return _fake.handle(url, params or {})
     delay = 1.0
     for attempt in range(5):
         try:

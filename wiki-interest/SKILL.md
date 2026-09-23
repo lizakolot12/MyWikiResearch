@@ -19,8 +19,7 @@ write your own code for the data work. Run the script and interpret its JSON.**
    as "Hypothesis to check: …". Never state a reason as fact.
 4. Differences inside overlapping `trend_ci95` ranges are "about the same".
 5. Pageviews show interest, not demand. Recommend next validation steps.
-6. When you make a chart or PDF, give its path in the answer. With `demo_data: true`, say
-   that the data is synthetic.
+6. When you make a chart or PDF, give its path in the answer.
 7. Answer in the user's language. In Ukrainian write literary Ukrainian: reuse the wording
    of `headlines`/`reasons`, use the terms listed in `answer_checklist` (full list:
    `references/uk_style.md`), no Russian words, no English words inside sentences
@@ -76,7 +75,7 @@ charts and PDFs land next to the user.
    EOF
    ```
    It checks the answer against the last run: language, confidence, the
-   interest-is-not-demand caveat, a validation step, demo-data notice, chart/PDF path,
+   interest-is-not-demand caveat, a validation step, chart/PDF path,
    causes stated as facts. `"ok": true` → send the answer. Otherwise fix every item in
    `missing`, `language_warnings` and `hints`, then send the corrected answer (do not run
    the check a second time).
@@ -109,7 +108,6 @@ Fields of each series (one topic in one language, or combined):
 | `confidence` + `reasons` | high / medium / low and **why** |
 | `status: missing_article` | no article in that language: a signal in itself (content gap) |
 | `ranking.order` | series sorted by `--rank-by` (growth, growth_rel, yoy, size, share) |
-| `demo_data: true` | synthetic test data. Say so in **every** answer; never present it as real |
 
 ## More guidance for conclusions
 - For `unclear`, say the data does not show a reliable trend.

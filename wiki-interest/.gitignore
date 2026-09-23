@@ -4,3 +4,4 @@ wiki-interest-output/
 *.pyc
 .venv/
 *.zip
+evals/results/
