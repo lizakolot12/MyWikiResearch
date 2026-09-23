@@ -64,9 +64,7 @@ def topics_arg(values: list[str]) -> list[str]:
     return list(dict.fromkeys(out))
 
 
-def doctor(client: WikiClient, cache: Cache) -> dict:
-    from datetime import date
-
+def doctor(cache: Cache) -> dict:
     out = {"python": sys.version.split()[0], "cache": cache.stats()["path"]}
     try:
         import matplotlib
@@ -74,11 +72,14 @@ def doctor(client: WikiClient, cache: Cache) -> dict:
         out["deps"] = f"numpy {numpy.__version__}, matplotlib {matplotlib.__version__}"
     except ImportError as e:
         out["deps"] = f"MISSING: {e}; run pip install -r requirements.txt"
-    try:
-        views = client.daily_views("en", "Wikipedia", date(2024, 1, 1), date(2024, 1, 7))
-        qid = client.qid_for_article("en", "Wikipedia")
-        out["pageviews_api"] = "ok" if views else "no data returned"
-        out["wikidata_api"] = "ok" if qid else "no data returned"
+    from wikitrend import api
+    try:  # straight to the API: a warm cache must not hide a network problem
+        views = api.http_get_json(f"{api.PAGEVIEWS}/per-article/en.wikipedia/all-access/user/"
+                                  "Wikipedia/daily/2024010100/2024010700")
+        found = api.http_get_json(api.WIKIDATA, {"action": "wbgetentities", "ids": "Q52",
+                                                 "props": "labels", "format": "json"})
+        out["pageviews_api"] = "ok" if (views or {}).get("items") else "no data returned"
+        out["wikidata_api"] = "ok" if (found or {}).get("entities") else "no data returned"
     except ApiError as e:
         out["api_error"] = str(e)[:300]
     return out
@@ -183,7 +184,7 @@ def main(argv=None) -> int:
                 run = None
             emit(check_answer(text, run))
         elif a.cmd == "doctor":
-            emit(doctor(client, cache))
+            emit(doctor(cache))
         elif a.cmd == "cache":
             if a.action == "clear":
                 cache.clear()

@@ -20,6 +20,23 @@ USER_AGENT = (
 PAGEVIEWS = "https://wikimedia.org/api/rest_v1/metrics/pageviews"
 WIKIDATA = "https://www.wikidata.org/w/api.php"
 DATA_START = date(2015, 7, 1)  # first day of the pageviews API (agent=user)
+SETTLE_DAYS = 3  # recent days may not be published yet; do not treat them as final
+
+
+def _today() -> date:
+    return date.today()
+
+
+def settled_until(fetched_to: date, returned: list[date]) -> date:
+    """Last day of a fetched range that can be cached as final.
+
+    Days up to `today - SETTLE_DAYS` are final even without data (0 views).
+    Later days count only up to the last day the API actually returned.
+    """
+    settled = _today() - timedelta(days=SETTLE_DAYS)
+    if fetched_to <= settled:
+        return fetched_to
+    return min(fetched_to, max([settled, *returned]))
 
 
 class ApiError(RuntimeError):
@@ -154,7 +171,9 @@ class WikiClient:
                    f"{quote(wiki_title(title), safe='')}/daily/{_ymd(a)}00/{_ymd(b)}00")
             data = self._get(url) or {}
             pts = {_parse_ts(x["timestamp"]): x["views"] for x in data.get("items", [])}
-            self.cache.store_series(key, a, b, pts)
+            last = settled_until(b, list(pts))
+            if last >= a:
+                self.cache.store_series(key, a, last, {d: v for d, v in pts.items() if d <= last})
         return self.cache.load_series(key, start, end)
 
     def monthly_totals(self, lang: str, start: date, end: date,
@@ -172,5 +191,11 @@ class WikiClient:
             data = self._get(url) or {}
             pts = {_parse_ts(x["timestamp"]).replace(day=1): x["views"]
                    for x in data.get("items", [])}
-            self.cache.store_series(key, a, b, pts)
+            # months are final up to the first one that is neither settled nor returned
+            settled = _today() - timedelta(days=SETTLE_DAYS)
+            last, m = None, a
+            while m <= b and (month_end(m) <= settled or m in pts):
+                last, m = m, month_end(m) + timedelta(days=1)
+            if last is not None:
+                self.cache.store_series(key, a, last, {m: v for m, v in pts.items() if m <= last})
         return self.cache.load_series(key, start, end)

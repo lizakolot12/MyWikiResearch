@@ -57,9 +57,12 @@ def place(dest: Path, link: bool) -> None:
     if dest.resolve() == SRC:
         raise SystemExit(f"{dest} is the source folder itself; nothing to install")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    if dest.is_symlink() or (link and dest.exists()):
-        # an old link, or a copy that becomes a link: the cache stays in the source folder
-        dest.unlink() if dest.is_symlink() else shutil.rmtree(dest)
+    if dest.is_symlink():
+        dest.unlink()
+    elif link and dest.exists():
+        # a copy becomes a link: keep its data cache (the link shares SRC/.cache)
+        keep_cache(dest / ".cache")
+        shutil.rmtree(dest)
     if link:
         dest.symlink_to(SRC, target_is_directory=True)
         print(f"-> linked {dest} -> {SRC}")
@@ -70,6 +73,17 @@ def place(dest: Path, link: bool) -> None:
                 shutil.rmtree(child) if child.is_dir() else child.unlink()
     shutil.copytree(SRC, dest, ignore=IGNORE, dirs_exist_ok=True)
     print(f"-> copied to {dest}")
+
+
+def keep_cache(cache: Path) -> None:
+    """Move a copy's .cache to SRC/.cache, or next to the copy if SRC already has one."""
+    if not cache.is_dir():
+        return
+    target = SRC / ".cache"
+    if target.exists():
+        target = cache.parent.parent / f"{NAME}-cache-backup"
+    shutil.move(str(cache), str(target))
+    print(f"-> kept the data cache: {target}")
 
 
 def build_zip(out: Path) -> None:
@@ -124,11 +138,11 @@ def main(argv=None) -> int:
                    help="after installing, start Claude Code (MODEL: haiku, sonnet, opus or an id)")
     a = p.parse_args(argv)
 
+    if a.agent and a.agent[0] != "claude":
+        p.error(f"unknown agent {a.agent[0]!r}: only 'claude' is supported")
     if a.zip:
         if a.agent:
             p.error("--zip cannot be combined with starting an agent")
-    if a.agent and a.agent[0] != "claude":
-        p.error(f"unknown agent {a.agent[0]!r}: only 'claude' is supported")
         build_zip(a.zip)
         return 0
     if a.deps_only:

@@ -81,7 +81,7 @@ def run_analysis(client: WikiClient, topics: list[str], langs: list[str], months
         s.pop("_totals", None)
 
     key = RANK_KEYS.get(rank_by, "trend_pct_yr")
-    ranked = sorted([s for s in (combined or series) if s.get(key) is not None],
+    ranked = sorted([s for s in rank_pool(series, combined) if s.get(key) is not None],
                     key=lambda s: -s[key])
     run = {
         "run_id": datetime.now().strftime("%Y%m%d-%H%M%S"),
@@ -96,6 +96,12 @@ def run_analysis(client: WikiClient, topics: list[str], langs: list[str], months
         "api_requests": client.requests_made,
     }
     return run
+
+
+def rank_pool(series: list[dict], combined: list[dict]) -> list[dict]:
+    """One entry per language: its combined series, or its only series if there is one."""
+    langs = {c["lang"] for c in combined}
+    return combined + [s for s in series if s["lang"] not in langs]
 
 
 UP = ("growing", "slow_growth")

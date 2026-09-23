@@ -36,12 +36,21 @@ HYPOTHESIS = re.compile(r"гіпотез|hypothes|можлив|possibl|perhaps|m
 
 
 # Bare "growing/declining" words that overstate a slow or flat verdict.
+_NOT_UK = r"(?<!повільно )(?<!не )(?<!ні )"
+_NOT_EN = r"(?<!slow )(?<!slowly )(?<!not )(?<!n't )(?<!never )"
 UPGRADE = {
-    "growing": re.compile(r"(?<!повільно )\b(зростає|зростають)\b|(?<!slow )(?<!slowly )"
-                          r"\bgrowing\b", re.I),
-    "declining": re.compile(r"(?<!повільно )\b(спадає|спадають)\b|(?<!slow )(?<!slowly )"
-                            r"\bdeclining\b", re.I),
+    "growing": re.compile(_NOT_UK + r"\b(зростає|зростають)\b|" + _NOT_EN + r"\bgrowing\b",
+                          re.I),
+    "declining": re.compile(_NOT_UK + r"\b(спадає|спадають)\b|" + _NOT_EN + r"\bdeclining\b",
+                            re.I),
 }
+SENTENCE = re.compile(r"(?<=[.!?…])\s+|\n+")
+
+
+def unhedged_causes(text: str) -> list[str]:
+    """Sentences that name a cause without a hedge («можливо», «гіпотеза») in the same sentence."""
+    return [s.strip() for s in SENTENCE.split(text)
+            if CAUSAL.search(s) and not HYPOTHESIS.search(s)]
 
 
 def verdict_upgrades(text: str, run: dict | None) -> list[str]:
@@ -69,7 +78,7 @@ def check_answer(text: str, run: dict | None = None) -> dict:
     missing = [(m_uk if uk else m_en) for key, when, rx, m_uk, m_en in REQUIRED
                if when(run) and not re.search(rx, text, re.I)]
     hints = []
-    if CAUSAL.search(text) and not HYPOTHESIS.search(text):
+    if unhedged_causes(text):
         hints.append("you seem to name a cause: the data shows WHEN, not WHY; label it "
                      + ("«Гіпотеза для перевірки: …»" if uk else "'Hypothesis to check: …'"))
     hints += verdict_upgrades(text, run)
