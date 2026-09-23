@@ -27,7 +27,6 @@ def ensure_deps() -> None:
     try:
         import matplotlib  # noqa: F401
         import numpy  # noqa: F401
-        import requests  # noqa: F401
         return
     except ImportError as e:
         missing = e.name

@@ -23,15 +23,25 @@ import subprocess
 import sys
 import venv
 import zipfile
-from fnmatch import fnmatch
 from pathlib import Path
 
 SRC = Path(__file__).resolve().parent
 NAME = SRC.name  # "wiki-interest"
 KEEP_ON_UPDATE = {".cache", ".venv"}
-SKIP = (".cache", ".venv", "__pycache__", "*.pyc", ".pytest_cache", "wiki-interest-output",
-        "results", "*.zip")
-IGNORE = shutil.ignore_patterns(*SKIP)
+# The only files that reach users (a copy install and the --zip archive alike).
+# Tests, evals and requirements-dev.txt stay in the repository.
+SHIP = ("SKILL.md", "scripts", "wikitrend", "references", "requirements.txt", "install.py")
+
+
+def shipped_files() -> list[tuple[Path, Path]]:
+    """(absolute path, path relative to the skill folder) of every file in SHIP."""
+    out = []
+    for item in SHIP:
+        path = SRC / item
+        files = [path] if path.is_file() else sorted(path.rglob("*"))
+        out += [(f, f.relative_to(SRC)) for f in files
+                if f.is_file() and "__pycache__" not in f.parts and f.suffix != ".pyc"]
+    return out
 
 
 def venv_python(skill: Path) -> Path:
@@ -71,7 +81,9 @@ def place(dest: Path, link: bool) -> None:
         for child in dest.iterdir():
             if child.name not in KEEP_ON_UPDATE:
                 shutil.rmtree(child) if child.is_dir() else child.unlink()
-    shutil.copytree(SRC, dest, ignore=IGNORE, dirs_exist_ok=True)
+    for f, rel in shipped_files():
+        (dest / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(f, dest / rel)
     print(f"-> copied to {dest}")
 
 
@@ -89,10 +101,8 @@ def keep_cache(cache: Path) -> None:
 def build_zip(out: Path) -> None:
     out = out.resolve()
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
-        for f in sorted(SRC.rglob("*")):
-            rel = f.relative_to(SRC)
-            if f.is_file() and not any(fnmatch(part, pat) for part in rel.parts for pat in SKIP):
-                z.write(f, Path(NAME) / rel)
+        for f, rel in shipped_files():
+            z.write(f, Path(NAME) / rel)
     print(f"-> {out}  (upload it in claude.ai: Settings > Capabilities > Skills)")
 
 

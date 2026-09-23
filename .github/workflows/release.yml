@@ -1,0 +1,35 @@
+# Push a tag like v1.0.0: runs the tests, builds wiki-interest.zip and attaches it
+# to a GitHub Release. The archive is built only if the tests pass.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r wiki-interest/requirements-dev.txt
+
+      - name: Run tests
+        run: python -m pytest -q wiki-interest/tests
+
+      - name: Build the skill archive
+        run: python wiki-interest/install.py --zip wiki-interest.zip
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: wiki-interest.zip
+          generate_release_notes: true

@@ -32,7 +32,7 @@ write your own code for the data work. Run the script and interpret its JSON.**
 
 ## Setup (once)
 ```bash
-python <skill_dir>/install.py --deps-only        # makes <skill_dir>/.venv with numpy, matplotlib, requests
+python <skill_dir>/install.py --deps-only        # makes <skill_dir>/.venv with numpy, matplotlib
 ```
 Only if a command prints `"error": "missing Python package"`. The script then uses `.venv` by itself.
 `<skill_dir>` is this skill's folder. Run every command from the user's working directory

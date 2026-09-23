@@ -6,11 +6,13 @@ series are fetched incrementally, metadata lookups are cached for 30 days.
 from __future__ import annotations
 
 import calendar
+import json
+import ssl
 import time
+import urllib.error
+import urllib.request
 from datetime import date, timedelta
-from urllib.parse import quote
-
-import requests
+from urllib.parse import quote, urlencode
 
 from .cache import Cache, missing_ranges
 
@@ -43,26 +45,41 @@ class ApiError(RuntimeError):
     pass
 
 
-_session = requests.Session()
-_session.headers["User-Agent"] = USER_AGENT
+RETRY_STATUS = (429, 500, 502, 503, 504)
+
+
+def _ssl_context() -> ssl.SSLContext:
+    """System CA store; certifi's bundle if installed (some Python builds ship without CAs)."""
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+
+_SSL = _ssl_context()
 
 
 def http_get_json(url: str, params: dict | None = None):
-    """GET JSON with retries. Returns None on 404 (no data for that article/range)."""
+    """GET JSON with retries (standard library only). Returns None on 404 (no data)."""
+    if params:
+        url = f"{url}?{urlencode(params)}"
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT,
+                                               "Accept": "application/json"})
     delay = 1.0
     for attempt in range(5):
         try:
-            r = _session.get(url, params=params, timeout=30)
-        except requests.RequestException as e:
+            with urllib.request.urlopen(req, timeout=30, context=_SSL) as r:
+                return json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return None
+            if e.code not in RETRY_STATUS or attempt == 4:
+                body = e.read().decode("utf-8", "replace")[:200]
+                raise ApiError(f"HTTP {e.code} for {url}: {body}") from e
+        except (urllib.error.URLError, TimeoutError, OSError) as e:
             if attempt == 4:
                 raise ApiError(f"network error for {url}: {e}") from e
-        else:
-            if r.status_code == 404:
-                return None
-            if r.status_code == 200:
-                return r.json()
-            if r.status_code not in (429, 500, 502, 503, 504) or attempt == 4:
-                raise ApiError(f"HTTP {r.status_code} for {r.url}: {r.text[:200]}")
         time.sleep(delay)
         delay *= 2
     raise ApiError(f"failed: {url}")
