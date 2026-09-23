@@ -7,6 +7,7 @@ Commands (all print compact JSON unless stated otherwise):
   show     [--series pl] [--run last]                monthly table for checking a conclusion (text)
   report   --title ... --summary ... [--rec ...]     one-page PDF from the last run
   cache    info|clear
+  doctor                                             check setup and Wikimedia API access
 Run any command with -h for options.
 """
 from __future__ import annotations
@@ -35,6 +36,28 @@ def topics_arg(values: list[str]) -> list[str]:
     for v in values:
         out += [x.strip() for x in v.split(";") if x.strip()]
     return list(dict.fromkeys(out))
+
+
+def doctor(client: WikiClient, cache: Cache) -> dict:
+    from datetime import date
+
+    from wikitrend import api
+    out = {"python": sys.version.split()[0], "cache": cache.stats()["path"],
+           "demo_mode": api.FAKE}
+    try:
+        import matplotlib
+        import numpy
+        out["deps"] = f"numpy {numpy.__version__}, matplotlib {matplotlib.__version__}"
+    except ImportError as e:
+        out["deps"] = f"MISSING: {e}; run pip install -r requirements.txt"
+    try:
+        views = client.daily_views("en", "Wikipedia", date(2024, 1, 1), date(2024, 1, 7))
+        qid = client.qid_for_article("en", "Wikipedia")
+        out["pageviews_api"] = "ok" if views else "no data returned"
+        out["wikidata_api"] = "ok" if qid else "no data returned"
+    except ApiError as e:
+        out["api_error"] = str(e)[:300]
+    return out
 
 
 def main(argv=None) -> int:
@@ -77,6 +100,8 @@ def main(argv=None) -> int:
     sp.add_argument("--out", default="wiki-interest-output/report.pdf")
     sp.add_argument("--ui-lang", default="uk", choices=["uk", "en"])
 
+    sub.add_parser("doctor", help="check dependencies, cache and API access")
+
     sp = sub.add_parser("cache", help="cache info or clear")
     sp.add_argument("action", choices=["info", "clear"])
 
@@ -112,6 +137,8 @@ def main(argv=None) -> int:
             if run.get("demo_data"):
                 res["tell_user"] += " Say that the report uses SYNTHETIC DEMO DATA."
             emit(res)
+        elif a.cmd == "doctor":
+            emit(doctor(client, cache))
         elif a.cmd == "cache":
             if a.action == "clear":
                 cache.clear()
