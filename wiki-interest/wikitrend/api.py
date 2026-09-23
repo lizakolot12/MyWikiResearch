@@ -6,12 +6,13 @@ series are fetched incrementally, metadata lookups are cached for 30 days.
 from __future__ import annotations
 
 import calendar
-import os
+import json
+import ssl
 import time
+import urllib.error
+import urllib.request
 from datetime import date, timedelta
-from urllib.parse import quote
-
-import requests
+from urllib.parse import quote, urlencode
 
 from .cache import Cache, missing_ranges
 
@@ -21,37 +22,64 @@ USER_AGENT = (
 PAGEVIEWS = "https://wikimedia.org/api/rest_v1/metrics/pageviews"
 WIKIDATA = "https://www.wikidata.org/w/api.php"
 DATA_START = date(2015, 7, 1)  # first day of the pageviews API (agent=user)
-FAKE = os.environ.get("WIKITREND_FAKE_API") == "1"
+SETTLE_DAYS = 3  # recent days may not be published yet; do not treat them as final
+
+
+def _today() -> date:
+    return date.today()
+
+
+def settled_until(fetched_to: date, returned: list[date]) -> date:
+    """Last day of a fetched range that can be cached as final.
+
+    Days up to `today - SETTLE_DAYS` are final even without data (0 views).
+    Later days count only up to the last day the API actually returned.
+    """
+    settled = _today() - timedelta(days=SETTLE_DAYS)
+    if fetched_to <= settled:
+        return fetched_to
+    return min(fetched_to, max([settled, *returned]))
 
 
 class ApiError(RuntimeError):
     pass
 
 
-_session = requests.Session()
-_session.headers["User-Agent"] = USER_AGENT
+RETRY_STATUS = (429, 500, 502, 503, 504)
+
+
+def _ssl_context() -> ssl.SSLContext:
+    """System CA store; certifi's bundle if installed (some Python builds ship without CAs)."""
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+
+_SSL = _ssl_context()
 
 
 def http_get_json(url: str, params: dict | None = None):
-    """GET JSON with retries. Returns None on 404 (no data for that article/range)."""
-    if FAKE:
-        from . import _fake
-
-        return _fake.handle(url, params or {})
+    """GET JSON with retries (standard library only). Returns None on 404 (no data)."""
+    if params:
+        url = f"{url}?{urlencode(params)}"
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT,
+                                               "Accept": "application/json"})
     delay = 1.0
     for attempt in range(5):
         try:
-            r = _session.get(url, params=params, timeout=30)
-        except requests.RequestException as e:
+            with urllib.request.urlopen(req, timeout=30, context=_SSL) as r:
+                return json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return None
+            if e.code not in RETRY_STATUS or attempt == 4:
+                body = e.read().decode("utf-8", "replace")[:200]
+                raise ApiError(f"HTTP {e.code} for {url}: {body}") from e
+        except (urllib.error.URLError, TimeoutError, OSError) as e:
             if attempt == 4:
                 raise ApiError(f"network error for {url}: {e}") from e
-        else:
-            if r.status_code == 404:
-                return None
-            if r.status_code == 200:
-                return r.json()
-            if r.status_code not in (429, 500, 502, 503, 504) or attempt == 4:
-                raise ApiError(f"HTTP {r.status_code} for {r.url}: {r.text[:200]}")
         time.sleep(delay)
         delay *= 2
     raise ApiError(f"failed: {url}")
@@ -160,7 +188,9 @@ class WikiClient:
                    f"{quote(wiki_title(title), safe='')}/daily/{_ymd(a)}00/{_ymd(b)}00")
             data = self._get(url) or {}
             pts = {_parse_ts(x["timestamp"]): x["views"] for x in data.get("items", [])}
-            self.cache.store_series(key, a, b, pts)
+            last = settled_until(b, list(pts))
+            if last >= a:
+                self.cache.store_series(key, a, last, {d: v for d, v in pts.items() if d <= last})
         return self.cache.load_series(key, start, end)
 
     def monthly_totals(self, lang: str, start: date, end: date,
@@ -178,5 +208,11 @@ class WikiClient:
             data = self._get(url) or {}
             pts = {_parse_ts(x["timestamp"]).replace(day=1): x["views"]
                    for x in data.get("items", [])}
-            self.cache.store_series(key, a, b, pts)
+            # months are final up to the first one that is neither settled nor returned
+            settled = _today() - timedelta(days=SETTLE_DAYS)
+            last, m = None, a
+            while m <= b and (month_end(m) <= settled or m in pts):
+                last, m = m, month_end(m) + timedelta(days=1)
+            if last is not None:
+                self.cache.store_series(key, a, last, {m: v for m, v in pts.items() if m <= last})
         return self.cache.load_series(key, start, end)

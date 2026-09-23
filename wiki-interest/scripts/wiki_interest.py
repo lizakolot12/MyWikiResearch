@@ -27,7 +27,6 @@ def ensure_deps() -> None:
     try:
         import matplotlib  # noqa: F401
         import numpy  # noqa: F401
-        import requests  # noqa: F401
         return
     except ImportError as e:
         missing = e.name
@@ -64,23 +63,22 @@ def topics_arg(values: list[str]) -> list[str]:
     return list(dict.fromkeys(out))
 
 
-def doctor(client: WikiClient, cache: Cache) -> dict:
-    from datetime import date
-
-    from wikitrend import api
-    out = {"python": sys.version.split()[0], "cache": cache.stats()["path"],
-           "demo_mode": api.FAKE}
+def doctor(cache: Cache) -> dict:
+    out = {"python": sys.version.split()[0], "cache": cache.stats()["path"]}
     try:
         import matplotlib
         import numpy
         out["deps"] = f"numpy {numpy.__version__}, matplotlib {matplotlib.__version__}"
     except ImportError as e:
         out["deps"] = f"MISSING: {e}; run pip install -r requirements.txt"
-    try:
-        views = client.daily_views("en", "Wikipedia", date(2024, 1, 1), date(2024, 1, 7))
-        qid = client.qid_for_article("en", "Wikipedia")
-        out["pageviews_api"] = "ok" if views else "no data returned"
-        out["wikidata_api"] = "ok" if qid else "no data returned"
+    from wikitrend import api
+    try:  # straight to the API: a warm cache must not hide a network problem
+        views = api.http_get_json(f"{api.PAGEVIEWS}/per-article/en.wikipedia/all-access/user/"
+                                  "Wikipedia/daily/2024010100/2024010700")
+        found = api.http_get_json(api.WIKIDATA, {"action": "wbgetentities", "ids": "Q52",
+                                                 "props": "labels", "format": "json"})
+        out["pageviews_api"] = "ok" if (views or {}).get("items") else "no data returned"
+        out["wikidata_api"] = "ok" if (found or {}).get("entities") else "no data returned"
     except ApiError as e:
         out["api_error"] = str(e)[:300]
     return out
@@ -163,19 +161,13 @@ def main(argv=None) -> int:
             out = build_pdf(run, Path(a.out), a.title, a.summary, a.rec, a.assumption,
                             a.ui_lang)
             res = {"pdf": str(out.resolve()), "run_id": run["run_id"],
-                   "tell_user": "Give the user this PDF path and summarize the findings "
-                                "with verdicts and confidence; run check-answer on that "
-                                "answer before sending it."}
-            if run.get("demo_data"):
-                res["tell_user"] += " Say that the report uses SYNTHETIC DEMO DATA."
+                   "tell_user": "Give the PDF path and findings; check-answer first."}
             if a.ui_lang == "uk":
                 warnings = check_uk("\n".join([a.title, a.summary, *a.rec, *a.assumption]),
                                     run_words(run))
                 if warnings:
                     res["language_warnings"] = warnings
-                    res["tell_user"] = ("Fix these phrases in your title/summary/recs, rerun "
-                                        "`report` with the same --out, then " +
-                                        res["tell_user"][0].lower() + res["tell_user"][1:])
+                    res["tell_user"] = "Fix these phrases, rerun report with the same --out."
             emit(res)
         elif a.cmd == "check-answer":
             text = Path(a.file).read_text() if a.file else sys.stdin.read()
@@ -187,7 +179,7 @@ def main(argv=None) -> int:
                 run = None
             emit(check_answer(text, run))
         elif a.cmd == "doctor":
-            emit(doctor(client, cache))
+            emit(doctor(cache))
         elif a.cmd == "cache":
             if a.action == "clear":
                 cache.clear()

@@ -22,9 +22,9 @@ MAX_SERIES = len(PALETTE)
 
 LABELS = {
     "uk": {"abs": "Переглядів/день (без сплесків, лог. шкала)",
-           "idx": "Індекс зростання (перші 3 міс. = 100)", "demo": "ДЕМО-ДАНІ"},
+           "idx": "Індекс зростання (перші 3 міс. = 100)"},
     "en": {"abs": "Views/day (spikes removed, log scale)",
-           "idx": "Growth index (first 3 months = 100)", "demo": "DEMO DATA"},
+           "idx": "Growth index (first 3 months = 100)"},
 }
 
 
@@ -78,10 +78,6 @@ def draw(ax_abs, ax_idx, run: dict, ui: str = "uk") -> None:
     if len(series) >= 2:  # one shared legend under both panels
         ax_abs.legend(fontsize=7, frameon=False, ncol=4, loc="upper left",
                       bbox_to_anchor=(0, -0.13), borderaxespad=0)
-    if run.get("demo_data"):
-        for ax in (ax_abs, ax_idx):
-            ax.text(0.5, 0.5, L["demo"], transform=ax.transAxes, fontsize=28, color="#d0d0d0",
-                    ha="center", va="center", alpha=0.6, rotation=20, zorder=0)
 
 
 def save_chart(run: dict, path: Path, ui: str = "uk") -> Path:

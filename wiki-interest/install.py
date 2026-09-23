@@ -23,15 +23,25 @@ import subprocess
 import sys
 import venv
 import zipfile
-from fnmatch import fnmatch
 from pathlib import Path
 
 SRC = Path(__file__).resolve().parent
 NAME = SRC.name  # "wiki-interest"
 KEEP_ON_UPDATE = {".cache", ".venv"}
-SKIP = (".cache", ".venv", "__pycache__", "*.pyc", ".pytest_cache", "wiki-interest-output",
-        "results", "*.zip")
-IGNORE = shutil.ignore_patterns(*SKIP)
+# The only files that reach users (a copy install and the --zip archive alike).
+# Tests, evals and requirements-dev.txt stay in the repository.
+SHIP = ("SKILL.md", "scripts", "wikitrend", "references", "requirements.txt", "install.py")
+
+
+def shipped_files() -> list[tuple[Path, Path]]:
+    """(absolute path, path relative to the skill folder) of every file in SHIP."""
+    out = []
+    for item in SHIP:
+        path = SRC / item
+        files = [path] if path.is_file() else sorted(path.rglob("*"))
+        out += [(f, f.relative_to(SRC)) for f in files
+                if f.is_file() and "__pycache__" not in f.parts and f.suffix != ".pyc"]
+    return out
 
 
 def venv_python(skill: Path) -> Path:
@@ -57,9 +67,12 @@ def place(dest: Path, link: bool) -> None:
     if dest.resolve() == SRC:
         raise SystemExit(f"{dest} is the source folder itself; nothing to install")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    if dest.is_symlink() or (link and dest.exists()):
-        # an old link, or a copy that becomes a link: the cache stays in the source folder
-        dest.unlink() if dest.is_symlink() else shutil.rmtree(dest)
+    if dest.is_symlink():
+        dest.unlink()
+    elif link and dest.exists():
+        # a copy becomes a link: keep its data cache (the link shares SRC/.cache)
+        keep_cache(dest / ".cache")
+        shutil.rmtree(dest)
     if link:
         dest.symlink_to(SRC, target_is_directory=True)
         print(f"-> linked {dest} -> {SRC}")
@@ -68,17 +81,28 @@ def place(dest: Path, link: bool) -> None:
         for child in dest.iterdir():
             if child.name not in KEEP_ON_UPDATE:
                 shutil.rmtree(child) if child.is_dir() else child.unlink()
-    shutil.copytree(SRC, dest, ignore=IGNORE, dirs_exist_ok=True)
+    for f, rel in shipped_files():
+        (dest / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(f, dest / rel)
     print(f"-> copied to {dest}")
+
+
+def keep_cache(cache: Path) -> None:
+    """Move a copy's .cache to SRC/.cache, or next to the copy if SRC already has one."""
+    if not cache.is_dir():
+        return
+    target = SRC / ".cache"
+    if target.exists():
+        target = cache.parent.parent / f"{NAME}-cache-backup"
+    shutil.move(str(cache), str(target))
+    print(f"-> kept the data cache: {target}")
 
 
 def build_zip(out: Path) -> None:
     out = out.resolve()
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
-        for f in sorted(SRC.rglob("*")):
-            rel = f.relative_to(SRC)
-            if f.is_file() and not any(fnmatch(part, pat) for part in rel.parts for pat in SKIP):
-                z.write(f, Path(NAME) / rel)
+        for f, rel in shipped_files():
+            z.write(f, Path(NAME) / rel)
     print(f"-> {out}  (upload it in claude.ai: Settings > Capabilities > Skills)")
 
 
@@ -124,11 +148,11 @@ def main(argv=None) -> int:
                    help="after installing, start Claude Code (MODEL: haiku, sonnet, opus or an id)")
     a = p.parse_args(argv)
 
+    if a.agent and a.agent[0] != "claude":
+        p.error(f"unknown agent {a.agent[0]!r}: only 'claude' is supported")
     if a.zip:
         if a.agent:
             p.error("--zip cannot be combined with starting an agent")
-    if a.agent and a.agent[0] != "claude":
-        p.error(f"unknown agent {a.agent[0]!r}: only 'claude' is supported")
         build_zip(a.zip)
         return 0
     if a.deps_only:

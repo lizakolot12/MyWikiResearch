@@ -2,7 +2,7 @@
 
 Checks what cheap models most often get wrong in eval runs: language (see
 lang_check.py) and the mandatory parts of an answer (confidence, the
-interest-is-not-demand caveat, validation steps, demo-data notice, chart/PDF
+interest-is-not-demand caveat, validation steps, chart/PDF
 path). Pattern checks only: they catch omissions, they do not grade reasoning.
 """
 from __future__ import annotations
@@ -25,10 +25,6 @@ REQUIRED = [
      r"опитуван|тест|інтерв'ю|інтервʼю|перевір|survey|test|interview|validat",
      "наступний крок перевірки (опитування, тестова сторінка, рекламний тест)",
      "a validation step (survey, landing-page or ad test)"),
-    ("demo", lambda run: bool(run and run.get("demo_data")),
-     r"демо|синтет|demo|synthetic",
-     "що це синтетичні демо-дані, а не справжня Вікіпедія",
-     "that this is SYNTHETIC DEMO DATA, not real Wikipedia"),
     ("path", lambda run: bool(run and run.get("chart")),
      r"\.png|\.pdf",
      "шлях до графіка (поле chart) або PDF",
@@ -40,12 +36,21 @@ HYPOTHESIS = re.compile(r"гіпотез|hypothes|можлив|possibl|perhaps|m
 
 
 # Bare "growing/declining" words that overstate a slow or flat verdict.
+_NOT_UK = r"(?<!повільно )(?<!не )(?<!ні )"
+_NOT_EN = r"(?<!slow )(?<!slowly )(?<!not )(?<!n't )(?<!never )"
 UPGRADE = {
-    "growing": re.compile(r"(?<!повільно )\b(зростає|зростають)\b|(?<!slow )(?<!slowly )"
-                          r"\bgrowing\b", re.I),
-    "declining": re.compile(r"(?<!повільно )\b(спадає|спадають)\b|(?<!slow )(?<!slowly )"
-                            r"\bdeclining\b", re.I),
+    "growing": re.compile(_NOT_UK + r"\b(зростає|зростають)\b|" + _NOT_EN + r"\bgrowing\b",
+                          re.I),
+    "declining": re.compile(_NOT_UK + r"\b(спадає|спадають)\b|" + _NOT_EN + r"\bdeclining\b",
+                            re.I),
 }
+SENTENCE = re.compile(r"(?<=[.!?…])\s+|\n+")
+
+
+def unhedged_causes(text: str) -> list[str]:
+    """Sentences that name a cause without a hedge («можливо», «гіпотеза») in the same sentence."""
+    return [s.strip() for s in SENTENCE.split(text)
+            if CAUSAL.search(s) and not HYPOTHESIS.search(s)]
 
 
 def verdict_upgrades(text: str, run: dict | None) -> list[str]:
@@ -73,7 +78,7 @@ def check_answer(text: str, run: dict | None = None) -> dict:
     missing = [(m_uk if uk else m_en) for key, when, rx, m_uk, m_en in REQUIRED
                if when(run) and not re.search(rx, text, re.I)]
     hints = []
-    if CAUSAL.search(text) and not HYPOTHESIS.search(text):
+    if unhedged_causes(text):
         hints.append("you seem to name a cause: the data shows WHEN, not WHY; label it "
                      + ("«Гіпотеза для перевірки: …»" if uk else "'Hypothesis to check: …'"))
     hints += verdict_upgrades(text, run)
@@ -86,8 +91,6 @@ def check_answer(text: str, run: dict | None = None) -> dict:
         out["language_warnings"] = language
     if hints:
         out["hints"] = hints
-    out["tell_agent"] = (
-        "Send the answer as is." if ok else
-        "Fix every item above in your answer, then send the corrected answer to the user. "
-        "Do not run check-answer again.")
+    out["tell_agent"] = ("Send as is." if ok else
+                         "Fix the items above and send; do not check again.")
     return out

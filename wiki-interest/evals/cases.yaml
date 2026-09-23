@@ -1,5 +1,5 @@
 # End-to-end evaluation cases: a real agent (e.g. Claude Haiku 4.5) uses the skill.
-# Run: python evals/run_evals.py --model claude-haiku-4-5-20251001 [--fake] [--only id]
+# Run: python evals/run_evals.py --model claude-haiku-4-5-20251001 [--only id]
 #
 # Checks (all automatic, from the agent's tool calls and final answer):
 #   used_script        agent ran scripts/wiki_interest.py analyze (not its own code)
@@ -12,8 +12,7 @@
 #   self_checked       (always) agent ran `check-answer` on its draft before sending
 #   uk_language        (added automatically for Ukrainian answers) no Russianisms, known
 #                      calques or English words inside sentences (wikitrend/lang_check.py)
-# With --fake the synthetic API is used; the answer must then admit demo data
-# (check `mentions_demo` is added automatically).
+# Evals run against the real Wikimedia API only (network access required).
 
 cases:
   - id: fasting_pl_cs
