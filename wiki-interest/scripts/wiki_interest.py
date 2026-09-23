@@ -15,10 +15,33 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+SKILL_DIR = Path(__file__).resolve().parent.parent
+
+
+def ensure_deps() -> None:
+    """Missing packages here but install.py made <skill>/.venv: rerun this command there."""
+    try:
+        import matplotlib  # noqa: F401
+        import numpy  # noqa: F401
+        import requests  # noqa: F401
+        return
+    except ImportError as e:
+        missing = e.name
+    venv_dir = SKILL_DIR / ".venv"
+    py = venv_dir / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    if py.exists() and Path(sys.prefix).resolve() != venv_dir.resolve():
+        os.execv(str(py), [str(py), str(Path(__file__).resolve()), *sys.argv[1:]])
+    print(json.dumps({"error": f"missing Python package: {missing}",
+                      "fix": f"python {SKILL_DIR / 'install.py'} --deps-only"}))
+    sys.exit(2)
+
+
+ensure_deps()
+sys.path.insert(0, str(SKILL_DIR))
 
 from wikitrend.analyze import (RANK_KEYS, compact, load_run, monthly_table,  # noqa: E402
                                parse_month, run_analysis, save_run)

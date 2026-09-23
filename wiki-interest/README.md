@@ -7,6 +7,7 @@ Agent Skill (формат `SKILL.md`), яка допомагає засновн�
 
 ```
 wiki-interest/
+  install.py                встановлення однією командою: копія, .venv, залежності, doctor
   SKILL.md                  інструкція для агента (коротка, розрахована на Haiku-клас моделей)
   scripts/wiki_interest.py  єдиний CLI: resolve / analyze / show / report / cache / doctor
   wikitrend/                код, що виконує всю роботу з даними
@@ -26,14 +27,30 @@ wiki-interest/
 ```
 
 ## Встановлення
+Одна команда (потрібен лише Python 3.10+, сам інсталятор без залежностей):
 ```bash
-pip install -r wiki-interest/requirements.txt       # numpy, matplotlib, requests
-python wiki-interest/scripts/wiki_interest.py doctor # перевірка залежностей і доступу до API
+python wiki-interest/install.py                  # для всіх проєктів: ~/.claude/skills/wiki-interest
+python wiki-interest/install.py --project .      # лише для цього проєкту: ./.claude/skills/wiki-interest
 ```
-Щоб агент (Claude Code) знайшов навичку, скопіюйте теку в `.claude/skills/wiki-interest`
-у проєкті або в `~/.claude/skills/`. Скомпільованих файлів немає, залежності мають
-зафіксовані діапазони версій. Кеш зберігається в `wiki-interest/.cache/`, а якщо тека
-навички недоступна для запису, то в `~/.cache/wiki-interest`.
+Інсталятор копіює теку навички, створює в ній `.venv` із залежностями з `requirements.txt`
+(системний Python не змінюється) і запускає `doctor`, щоб перевірити доступ до API. Агент
+і далі викликає `python <skill_dir>/scripts/wiki_interest.py ...`: якщо у звичайному Python
+пакетів немає, скрипт сам перезапускається в `.venv`. Повторний запуск оновлює код і
+зберігає кеш.
+
+Інші варіанти:
+- `--link` — символічне посилання замість копії: зміни в репозиторії діють одразу (для розробки);
+- `--dest DIR` — тека навичок іншого агента;
+- `--deps-only` — лише `.venv` у поточній теці навички;
+- `--system-python` — встановити пакети в поточний Python без `.venv`;
+- `--zip wiki-interest.zip` — архів для завантаження в claude.ai (Settings → Capabilities →
+  Skills). Там навичка працює в хмарній пісочниці Anthropic, тож і в мобільних застосунках;
+  numpy та matplotlib там уже є, але доступ до `wikimedia.org` залежить від мережевих
+  налаштувань виконання коду.
+
+Скомпільованих файлів немає, залежності мають зафіксовані діапазони версій. Кеш
+зберігається в `wiki-interest/.cache/`, а якщо тека навички недоступна для запису, то в
+`~/.cache/wiki-interest`.
 
 ## Як це працює для користувача
 Користувач пише: *«Порівняй зростання інтересу до інтервального голодування в польськомовній

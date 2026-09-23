@@ -2,3 +2,5 @@
 __pycache__/
 wiki-interest-output/
 *.pyc
+.venv/
+*.zip
