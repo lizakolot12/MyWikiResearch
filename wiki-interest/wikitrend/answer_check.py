@@ -91,8 +91,6 @@ def check_answer(text: str, run: dict | None = None) -> dict:
         out["language_warnings"] = language
     if hints:
         out["hints"] = hints
-    out["tell_agent"] = (
-        "Send the answer as is." if ok else
-        "Fix every item above in your answer, then send the corrected answer to the user. "
-        "Do not run check-answer again.")
+    out["tell_agent"] = ("Send as is." if ok else
+                         "Fix the items above and send; do not check again.")
     return out

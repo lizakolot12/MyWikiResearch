@@ -1,6 +1,4 @@
 """Ukrainian language check: catches the calques seen in real Haiku answers."""
-import json
-import re
 from pathlib import Path
 
 from wikitrend.i18n import CHECKLIST, REASONS, TEXT, headline, reason_text
@@ -83,11 +81,14 @@ def test_skill_example_is_clean():
 
 
 def test_old_eval_answers_are_flagged():
-    """The saved pre-fix eval run contains calques; the check must see them."""
-    runs = sorted((ROOT / "evals" / "results").glob("*.json"))
-    answers = [r["answer"] for p in runs[:1] for r in json.loads(p.read_text())["results"]]
-    if answers:
-        assert any(check_uk(a) for a in answers if re.search("[а-я]", a))
+    """Calques from real Haiku answers before the language fixes must be flagged."""
+    answers = [
+        "Року на року інтерес у чеському виданні знаходиться в межах похибки.",
+        "Інтерес зріс в 2,1 рази, а впевненість висока.",
+        "На протязі двох років переглядів сторінок показують stediy спад.",
+    ]
+    for a in answers:
+        assert check_uk(a), a
 
 
 def test_participles_and_numeral_agreement():

@@ -161,17 +161,13 @@ def main(argv=None) -> int:
             out = build_pdf(run, Path(a.out), a.title, a.summary, a.rec, a.assumption,
                             a.ui_lang)
             res = {"pdf": str(out.resolve()), "run_id": run["run_id"],
-                   "tell_user": "Give the user this PDF path and summarize the findings "
-                                "with verdicts and confidence; run check-answer on that "
-                                "answer before sending it."}
+                   "tell_user": "Give the PDF path and findings; check-answer first."}
             if a.ui_lang == "uk":
                 warnings = check_uk("\n".join([a.title, a.summary, *a.rec, *a.assumption]),
                                     run_words(run))
                 if warnings:
                     res["language_warnings"] = warnings
-                    res["tell_user"] = ("Fix these phrases in your title/summary/recs, rerun "
-                                        "`report` with the same --out, then " +
-                                        res["tell_user"][0].lower() + res["tell_user"][1:])
+                    res["tell_user"] = "Fix these phrases, rerun report with the same --out."
             emit(res)
         elif a.cmd == "check-answer":
             text = Path(a.file).read_text() if a.file else sys.stdin.read()

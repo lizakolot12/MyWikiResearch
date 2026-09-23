@@ -91,13 +91,13 @@ def test_check_answer(tmp_path, capsys, fake_api, monkeypatch):
     assert not bad["ok"]
     assert len(bad["missing"]) == 4  # confidence, caveat, validation, chart path
     assert any("на протязі" in w for w in bad["language_warnings"])
-    assert bad["hints"] and "check-answer again" in bad["tell_agent"]
+    assert bad["hints"] and "do not check again" in bad["tell_agent"]
 
     good = check("В україномовній Вікіпедії інтерес до теми "
                  "«Astronomy» спадає: тренд −14% на рік. Довіра до висновку висока. "
                  "Перегляди статей показують інтерес, а не готовність платити, тому "
                  "наступний крок — опитування. Графік: /tmp/out/chart-1.png")
-    assert good == {"ok": True, "tell_agent": "Send the answer as is."}
+    assert good == {"ok": True, "tell_agent": "Send as is."}
 
     monkeypatch.setattr("sys.stdin", io.StringIO("  "))
     code, out = run(capsys, "--cache-dir", cache, "check-answer")
