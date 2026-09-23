@@ -42,6 +42,14 @@ BANNED = [
     (r"\bпереглядач\w*", "«перегляди» (статей)"),
     (r"\bвідносно до\b", "«порівняно з», «відносно»"),
     (r"\bWikipedia\b", "«Вікіпедія» у тексті (Wikipedia лише в назвах)"),
+    (r"\b\w+[аяую]юч(ий|а|е|і|их|ого|ій|ому|им|ими)\b",
+     "дієприкметник на -ючий: «що зростає», «спадний», «наявний» (не «зростаючий», "
+     "«спадаючий», «існуючий»)"),
+    (r"\b(вижу|растущ\w*|растуч\w*|нужн\w*|сейчас|пока что|кажд\w*)\b",
+     "російське слово"),
+    (r"\bобумовлен\w*", "«зумовлений»"),
+    (r"\b(раст[уеё]\w*|провер\w*|отслід\w*|отслеж\w*)", "російське слово (зрост-, перевір-, відстеж-)"),
+    (r"\b\w+мовній розділі\b", "«у польськомовному розділі» (розділ — чоловічий рід)"),
 ]
 BANNED_RE = [(re.compile(p, re.IGNORECASE), fix) for p, fix in BANNED]
 
@@ -50,6 +58,15 @@ ALLOWED_LATIN = {
     "wikimedia", "wikidata", "pdf", "api", "json", "png", "csv", "url", "ci",
     "google", "trends", "yoy", "mk_p", "per_million", "all", "topics",
 }
+
+
+NUM_VIEWS = re.compile(r"(?<![\d,.])(\d{1,3}(?:[  ]\d{3})*|\d+)\s+переглядів\b")
+
+
+def _needs_other_form(number: str) -> bool:
+    """True if a whole number must not be followed by «переглядів» (genitive plural)."""
+    n = int(re.sub(r"\D", "", number))
+    return n % 10 in (1, 2, 3, 4) and n % 100 not in (11, 12, 13, 14)
 
 
 def is_ukrainian(text: str) -> bool:
@@ -80,6 +97,12 @@ def check_uk(text: str, allow: set[str] | frozenset[str] = frozenset()) -> list[
         found = sorted({m.group(0).strip() for m in rx.finditer(prose)})
         if found:
             out.append(f"{', '.join(found)} → {fix}")
+    bad_num = sorted({m.group(0) for m in NUM_VIEWS.finditer(prose)
+                      if _needs_other_form(m.group(1))})
+    if bad_num:
+        out.append(f"{', '.join(bad_num)} → узгодження: «1 перегляд», «2–4 перегляди», "
+                   f"«5 переглядів», «131 перегляд», «953 перегляди» (або «переглядів за "
+                   f"день: 953»)")
     ok = {w.lower() for w in ALLOWED_LATIN} | {w.lower() for w in allow}
     latin = []
     for line in prose.splitlines():

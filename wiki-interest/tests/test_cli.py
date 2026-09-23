@@ -73,3 +73,43 @@ def test_invalid_input_returns_json_error(tmp_path, capsys, fake_api):
     code, out = run(capsys, "--cache-dir", str(tmp_path), "analyze", "--topics", "X",
                     "--langs", "polish!", "--out", str(tmp_path))
     assert code == 1 and "error" in json.loads(out)
+
+
+def test_check_answer(tmp_path, capsys, fake_api, monkeypatch):
+    import io
+    cache = str(tmp_path / "c")
+    run(capsys, "--cache-dir", cache, "analyze", "--topics", "Astronomy", "--langs", "uk",
+        "--out", str(tmp_path))
+
+    def check(text):
+        monkeypatch.setattr("sys.stdin", io.StringIO(text))
+        code, out = run(capsys, "--cache-dir", cache, "check-answer")
+        assert code == 0
+        return json.loads(out)
+
+    bad = check("Інтерес до астрономії в україномовній Wikipedia спадає на протязі двох "
+                "років, бо школярі втратили інтерес до науки.")
+    assert not bad["ok"]
+    assert len(bad["missing"]) == 5  # confidence, caveat, validation, demo, chart path
+    assert any("на протязі" in w for w in bad["language_warnings"])
+    assert bad["hints"] and "check-answer again" in bad["tell_agent"]
+
+    good = check("Це синтетичні демо-дані. В україномовній Вікіпедії інтерес до теми "
+                 "«Astronomy» спадає: тренд −14% на рік. Довіра до висновку висока. "
+                 "Перегляди статей показують інтерес, а не готовність платити, тому "
+                 "наступний крок — опитування. Графік: /tmp/out/chart-1.png")
+    assert good == {"ok": True, "tell_agent": "Send the answer as is."}
+
+    monkeypatch.setattr("sys.stdin", io.StringIO("  "))
+    code, out = run(capsys, "--cache-dir", cache, "check-answer")
+    assert code == 1 and "error" in json.loads(out)
+
+
+def test_check_answer_flags_verdict_upgrade():
+    from wikitrend.answer_check import verdict_upgrades
+    run = {"series": [{"verdict": "slow_growth"}, {"verdict": "stable"}], "combined": []}
+    assert verdict_upgrades("Інтерес у німецькій Вікіпедії зростає.", run)
+    assert verdict_upgrades("German interest is growing.", run)
+    assert not verdict_upgrades("Інтерес повільно зростає. Interest is slowly growing.", run)
+    run["series"].append({"verdict": "growing"})
+    assert not verdict_upgrades("Інтерес зростає.", run)

@@ -6,6 +6,7 @@ Commands (all print compact JSON unless stated otherwise):
   analyze  --topics "Astronomy" --langs uk,pl,cs     fetch + metrics + chart (main command)
   show     [--series pl] [--run last]                monthly table for checking a conclusion (text)
   report   --title ... --summary ... [--rec ...]     one-page PDF from the last run
+  check-answer  < draft.txt                          self-check of the answer before sending it
   cache    info|clear
   doctor                                             check setup and Wikimedia API access
 Run any command with -h for options.
@@ -23,7 +24,8 @@ from wikitrend.analyze import (RANK_KEYS, compact, load_run, monthly_table,  # n
                                parse_month, run_analysis, save_run)
 from wikitrend.api import ApiError, WikiClient  # noqa: E402
 from wikitrend.cache import DEFAULT_CACHE_DIR, Cache  # noqa: E402
-from wikitrend.lang_check import allowed_words, check_uk  # noqa: E402
+from wikitrend.answer_check import check_answer, run_words  # noqa: E402
+from wikitrend.lang_check import check_uk  # noqa: E402
 from wikitrend.resolve import parse_langs, resolve_topic  # noqa: E402
 
 
@@ -37,13 +39,6 @@ def topics_arg(values: list[str]) -> list[str]:
     for v in values:
         out += [x.strip() for x in v.split(";") if x.strip()]
     return list(dict.fromkeys(out))
-
-
-def run_words(run: dict) -> set[str]:
-    """Article titles and topic names of a run: fine to quote in Latin script."""
-    return allowed_words(*(f"{s.get('article') or ''} {s.get('topic') or ''}"
-                           for s in run["series"]),
-                         *(t.get("label") or "" for t in run["topics"]))
 
 
 def doctor(client: WikiClient, cache: Cache) -> dict:
@@ -109,6 +104,10 @@ def main(argv=None) -> int:
     sp.add_argument("--out", default="wiki-interest-output/report.pdf")
     sp.add_argument("--ui-lang", default="uk", choices=["uk", "en"])
 
+    sp = sub.add_parser("check-answer", help="check the draft answer (stdin) before sending")
+    sp.add_argument("--file", help="read the draft from this file instead of stdin")
+    sp.add_argument("--run", default="last", help="run the answer is about (default: last)")
+
     sub.add_parser("doctor", help="check dependencies, cache and API access")
 
     sp = sub.add_parser("cache", help="cache info or clear")
@@ -142,7 +141,8 @@ def main(argv=None) -> int:
                             a.ui_lang)
             res = {"pdf": str(out.resolve()), "run_id": run["run_id"],
                    "tell_user": "Give the user this PDF path and summarize the findings "
-                                "with verdicts and confidence."}
+                                "with verdicts and confidence; run check-answer on that "
+                                "answer before sending it."}
             if run.get("demo_data"):
                 res["tell_user"] += " Say that the report uses SYNTHETIC DEMO DATA."
             if a.ui_lang == "uk":
@@ -154,6 +154,15 @@ def main(argv=None) -> int:
                                         "`report` with the same --out, then " +
                                         res["tell_user"][0].lower() + res["tell_user"][1:])
             emit(res)
+        elif a.cmd == "check-answer":
+            text = Path(a.file).read_text() if a.file else sys.stdin.read()
+            if not text.strip():
+                raise ValueError("empty answer: pass the full draft on stdin (heredoc)")
+            try:
+                run = load_run(Path(a.cache_dir), a.run)
+            except FileNotFoundError:
+                run = None
+            emit(check_answer(text, run))
         elif a.cmd == "doctor":
             emit(doctor(client, cache))
         elif a.cmd == "cache":

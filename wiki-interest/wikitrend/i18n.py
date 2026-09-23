@@ -144,6 +144,10 @@ CHECKLIST = {
         "Terms: " + "; ".join(f"{a} (не «{b}»)" for a, b in GLOSSARY_UK),
     ],
 }
+SELF_CHECK = ("LAST STEP, mandatory: pass your full draft answer to `check-answer` "
+              "(heredoc, see SKILL.md), fix what it reports, then send")
+for _items in CHECKLIST.values():
+    _items.append(SELF_CHECK)
 DEMO_CHECK = {"en": "say the data is SYNTHETIC DEMO DATA",
               "uk": "say the data is synthetic: «це синтетичні демо-дані»"}
 

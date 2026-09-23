@@ -27,6 +27,9 @@ write your own code for the data work. Run the script and interpret its JSON.**
    (quote article titles: «Intermittent fasting»). This covers every message, including
    progress notes: «Вікіпедія» not "Wikipedia", «навичка» not "skill", heading «Головні
    висновки» not «Ключові знахідки».
+8. **Never send an answer without `check-answer`** (workflow step 5), for every answer,
+   follow-ups included. Do not write progress notes to the user ("Запускаю аналіз…"): the
+   user should see only the checked answer.
 
 ## Setup (once)
 ```bash
@@ -54,7 +57,8 @@ charts and PDFs land next to the user.
    Check `topics[].label/description` is the thing the user meant. If it is wrong (e.g. a
    film with the same name), rerun with a better name, a `Q` id from `other_candidates`, or
    `lang:Article`.
-3. **Interpret** (see the next section) and answer. Show the chart path from `chart`.
+3. **Interpret** (see the next section) and draft the answer. Include the chart path from
+   `chart`.
 4. **Report on request** (or when the user wants something to share):
    ```bash
    python <skill_dir>/scripts/wiki_interest.py report --title "..." --summary "..." --rec "..." --rec "..." --assumption "..." --out report.pdf
@@ -64,6 +68,17 @@ charts and PDFs land next to the user.
    recommendations and the user's own criteria/assumptions (`--assumption`). Write them in
    the user's language; `--ui-lang uk|en` sets the labels. If the output has
    `language_warnings`, fix those phrases and rerun `report` with the same `--out`.
+5. **Self-check (mandatory, last step).** Put your full draft answer into `check-answer`:
+   ```bash
+   python <skill_dir>/scripts/wiki_interest.py check-answer <<'EOF'
+   <the full answer exactly as you will send it>
+   EOF
+   ```
+   It checks the answer against the last run: language, confidence, the
+   interest-is-not-demand caveat, a validation step, demo-data notice, chart/PDF path,
+   causes stated as facts. `"ok": true` → send the answer. Otherwise fix every item in
+   `missing`, `language_warnings` and `hints`, then send the corrected answer (do not run
+   the check a second time).
 
 Example of the answer style in Ukrainian (numbers come from `headlines`):
 > У польськомовній Вікіпедії інтерес до теми «Intermittent fasting» спадає: тренд −18% на

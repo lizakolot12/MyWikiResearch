@@ -156,6 +156,8 @@ def score(res: dict, checks: dict, ws: Path, fake: bool) -> dict:
         out["max_turns"] = (res.get("turns") or 99) <= checks["max_turns"]
     if fake:
         out["mentions_demo"] = any(s in answer for s in ("demo", "демо", "синтет", "synthetic"))
+    out["self_checked"] = any(c["tool"] == "Bash" and "check-answer" in
+                              c["input"].get("command", "") for c in calls)
     if is_ukrainian(res["answer"]):  # Russianisms, calques, stray English words
         out["uk_language"] = not check_uk(res["answer"], allowed_words(*res.get("facts", [])))
     return out

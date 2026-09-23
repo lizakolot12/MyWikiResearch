@@ -88,3 +88,16 @@ def test_old_eval_answers_are_flagged():
     answers = [r["answer"] for p in runs[:1] for r in json.loads(p.read_text())["results"]]
     if answers:
         assert any(check_uk(a) for a in answers if re.search("[а-я]", a))
+
+
+def test_participles_and_numeral_agreement():
+    text = ("Спадаючий тренд обумовлений сезонністю; аудиторія становить 131 переглядів на "
+            "день, а в чеськомовній Вікіпедії 1 552 переглядів і розділ має 3 растучих ринки. "
+            "Теми растуть, проверю в чеськомовній розділі.")
+    found = " ".join(check_uk(text))
+    for word in ("Спадаючий", "обумовлений", "131 переглядів", "1 552 переглядів",
+                 "растучих", "растуть", "проверю", "чеськомовній розділі"):
+        assert word in found, word
+    ok = ("Аудиторія становить 1 389 переглядів на день, 111 переглядів і 236 переглядів; "
+          "інтерес, що зростає, у польськомовній Вікіпедії. Ключі та гарячі теми.")
+    assert check_uk(ok) == []
