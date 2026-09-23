@@ -8,7 +8,8 @@ from pathlib import Path
 
 from . import api
 from .api import WikiClient, month_end
-from .metrics import add_months, analyze_series, reason_text
+from .i18n import CHECKLIST, DEMO_CHECK, TEXT, headline, lang_or_en, reason_text
+from .metrics import add_months, analyze_series
 from .resolve import resolve_topic
 
 MAX_REDIRECTS = 20
@@ -125,7 +126,7 @@ def combine_by_lang(series: list[dict], langs: list[str], window_start, window_e
         up = sum(s["verdict"] in UP for s in ok)
         down = sum(s["verdict"] in DOWN for s in ok)
         counts = {"up": up, "down": down, "flat": len(ok) - up - down, "n": len(ok)}
-        agree = f"{up} up, {down} down, {counts['flat']} flat/unclear of {len(ok)} topics"
+        agree = TEXT["en"]["agreement"].format(**counts)
         if up and down:
             res["_reason_codes"].append(["topics_disagree", counts])
             res["reasons"].append(reason_text("topics_disagree", counts))
@@ -133,7 +134,7 @@ def combine_by_lang(series: list[dict], langs: list[str], window_start, window_e
                 res["confidence"] = "medium"
         out.append({"id": f"{lang}:ALL({len(ok)} topics)", "lang": lang, "topic": "ALL",
                     "qid": "ALL", "article": " + ".join(s["article"] for s in ok),
-                    "topics_agreement": agree, **res})
+                    "topics_agreement": agree, "_agreement": counts, **res})
     return out
 
 
@@ -160,46 +161,27 @@ def load_run(cache_dir: Path, run_id: str = "last") -> dict:
     return json.loads((d / f"{run_id}.json").read_text())
 
 
-ANSWER_CHECKLIST = [
-    "use the verdict words from headlines; never upgrade slow_growth/stable to 'growing'",
-    "give confidence and its reasons",
-    "the data shows WHEN (spike dates, peak months), not WHY: any reason must be labelled "
-    "'Hypothesis to check: ...'",
-    "say that pageviews measure interest, not demand, and suggest how to validate "
-    "(survey, landing-page or ad test)",
-]
+def compact(run: dict, lang: str = "en") -> dict:
+    """What the agent sees: all conclusions, no per-month data (use `show` for that).
 
-
-def headline(s: dict) -> str:
-    """One-line conclusion per series, phrased so it can be quoted as is."""
-    if s.get("status") == "missing_article":
-        return f"{s['id']}: NO ARTICLE in this language (nothing to measure)"
-    if s.get("status") != "ok":
-        return f"{s['id']}: no data"
-    parts = [f"{s['id']}: {s['verdict'].upper()}"]
-    if s.get("trend_pct_yr") is not None:
-        lo, hi = s["trend_ci95"]
-        parts.append(f"trend {s['trend_pct_yr']:+.0f}%/yr (95% {lo:+.0f}..{hi:+.0f})")
-    if s.get("yoy_months_up"):
-        parts.append(f"{s['yoy_months_up']} months above last year")
-    parts.append(f"{s['daily_median_90d']:,} views/day")
-    if s.get("per_million") is not None:
-        parts.append(f"{s['per_million']:.0f} per million")
-    line = ", ".join(parts) + f"; confidence {s['confidence'].upper()}"
-    if s.get("reasons"):
-        line += " (" + "; ".join(s["reasons"]) + ")"
-    return line
-
-
-def compact(run: dict) -> dict:
-    """What the agent sees: all conclusions, no per-month data (use `show` for that)."""
-    out = {"headlines": [headline(s) for s in run.get("combined", []) + run["series"]],
-           "answer_checklist": ANSWER_CHECKLIST + (["say the data is SYNTHETIC DEMO DATA"]
-                                                   if run.get("demo_data") else [])}
+    Headlines, reasons and the checklist are in `lang`, so the agent quotes them
+    instead of translating (translation by a small model is where calques come from).
+    """
+    lang = lang_or_en(lang)
+    out = {"headlines": [headline(s, lang) for s in run.get("combined", []) + run["series"]],
+           "answer_checklist": CHECKLIST[lang] + ([DEMO_CHECK[lang]]
+                                                  if run.get("demo_data") else [])}
     out.update({k: v for k, v in run.items() if k not in ("series", "topics", "combined")})
+    if run.get("demo_data"):
+        out["warning"] = TEXT[lang]["demo"]
     out["topics"] = [{k: v for k, v in t.items() if k != "titles"} for t in run["topics"]]
-    strip = lambda s: {k: v for k, v in s.items()  # noqa: E731
-                       if not k.startswith("_") and v is not None and v != []}
+
+    def strip(s: dict) -> dict:
+        s = {**s, "reasons": [reason_text(c, p, lang) for c, p in s.get("_reason_codes", [])]}
+        if s.get("_agreement"):
+            s["topics_agreement"] = TEXT[lang]["agreement"].format(**s["_agreement"])
+        return {k: v for k, v in s.items()
+                if not k.startswith("_") and v is not None and v != []}
     if run.get("combined"):
         out["combined"] = [strip(s) for s in run["combined"]]
     out["series"] = [strip(s) for s in run["series"]]

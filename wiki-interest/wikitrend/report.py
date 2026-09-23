@@ -15,46 +15,47 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 from .charts import GRID, INK, INK2, draw, plottable  # noqa: E402
-from .metrics import reason_text  # noqa: E402
+from .i18n import CONF, VERDICT, reason_text, uk_numbers  # noqa: E402
 
 T = {
     "uk": {
         "subtitle": "Wikipedia · період {window} · мови: {langs} · перегляди людей (без ботів)",
-        "all": "Σ усі теми разом", "more_rows": "…і ще {n} рядів (див. JSON-вивід analyze)", "summary": "Головне", "recs": "Рекомендації", "table": "Дані по мовах",
+        "all": "Σ усі теми разом", "more_rows": "…і ще {n} рядів (див. JSON-вивід analyze)",
+        "summary": "Головні висновки", "recs": "Рекомендації", "table": "Дані за мовами",
         "cols": ["Мова", "Стаття", "Перегл./день", "На млн", "Рік до року",
                  "Тренд/рік (95% ДІ)", "Висновок", "Довіра"],
-        "verdict": {"growing": "зростає", "declining": "спадає", "stable": "стабільно",
-                    "slow_growth": "повільно росте", "slow_decline": "повільно спадає",
-                    "unclear": "неясно", "insufficient_data": "мало даних"},
+        "verdict": VERDICT["uk"],
         "status": {"missing_article": "немає статті", "no_data": "немає даних"},
-        "conf": {"high": "висока", "medium": "середня", "low": "низька"},
+        "conf": CONF["uk"],
         "caveats": "Застереження щодо окремих рядів",
         "method": "Методологія та обмеження",
         "method_lines": [
-            "Джерело: Wikimedia Pageviews API (agent=user, {access}); перегляди редиректів "
-            "{redirects}. Дані: {window}, повні місяці.",
-            "Перегляди статті — це сигнал інтересу, а не платоспроможного попиту; "
+            "Джерело: Wikimedia Pageviews API (agent=user, {access}); перегляди перенаправлень "
+            "{redirects}. Дані: {window}, лише повні місяці.",
+            "Перегляди статті свідчать про інтерес, а не про готовність платити; "
             "використовуйте їх, щоб обрати напрям для подальшої перевірки.",
-            "Сплески (день ≥ 2× від 29-денної медіани) прибрано з трендів; "
-            "«Рік до року» — останні 3 міс. проти тих самих місяців рік тому.",
-            "Тренд — регресія на лог-шкалі з тестом Манна–Кендалла (p < 0.05); «на млн» — "
-            "частка від усіх переглядів мовного розділу, тож розділи різного розміру можна порівнювати.",
-            "Довіра знижується через малу аудиторію, сплески, коротку історію, суперечність "
-            "між трендом і змінами рік до року та через загальне падіння трафіку розділу.",
+            "Сплеск — день, коли переглядів щонайменше вдвічі більше, ніж ковзна медіана за "
+            "29 днів; сплески вилучено з трендів. «Рік до року» — останні 3 міс. порівняно "
+            "з тими самими місяцями рік тому.",
+            "Тренд — регресія в логарифмічній шкалі з тестом Манна — Кендалла (p < 0,05); "
+            "«на млн» — частка від усіх переглядів мовного розділу, тому розділи різного "
+            "розміру можна порівнювати.",
+            "Довіра до висновку знижується через малу аудиторію, сплески, коротку історію, "
+            "розбіжність між трендом і зміною рік до року, а також через зміни трафіку "
+            "всього мовного розділу.",
         ],
         "yes": "враховано", "no": "не враховано",
         "demo": "ДЕМО-ДАНІ: синтетичні ряди, не реальна Вікіпедія",
     },
     "en": {
         "subtitle": "Wikipedia · period {window} · languages: {langs} · human views (bots excluded)",
-        "all": "Σ all topics", "more_rows": "…and {n} more rows (see analyze JSON output)", "summary": "Key findings", "recs": "Recommendations", "table": "Data by language",
+        "all": "Σ all topics", "more_rows": "…and {n} more rows (see analyze JSON output)",
+        "summary": "Key findings", "recs": "Recommendations", "table": "Data by language",
         "cols": ["Lang", "Article", "Views/day", "Per mln", "YoY",
                  "Trend/yr (95% CI)", "Verdict", "Confidence"],
-        "verdict": {"growing": "growing", "declining": "declining", "stable": "stable",
-                    "slow_growth": "slow growth", "slow_decline": "slow decline",
-                    "unclear": "unclear", "insufficient_data": "too little data"},
+        "verdict": VERDICT["en"],
         "status": {"missing_article": "no article", "no_data": "no data"},
-        "conf": {"high": "high", "medium": "medium", "low": "low"},
+        "conf": CONF["en"],
         "caveats": "Caveats per series",
         "method": "Methodology and limitations",
         "method_lines": [
@@ -147,6 +148,8 @@ def build_pdf(run: dict, out: Path, title: str, summary: str = "",
     heading(t["table"])
     all_rows = run.get("combined", []) + run["series"]
     rows = [_row(s, t) for s in all_rows[:14]]
+    if ui == "uk":  # decimal comma; column 1 is the article title, leave it as is
+        rows = [[c if j == 1 else uk_numbers(c) for j, c in enumerate(r)] for r in rows]
     h = LINE * 1.25 * (len(rows) + 1)
     ax = fig.add_axes([0.06, y - h, 0.88, h])
     ax.axis("off")

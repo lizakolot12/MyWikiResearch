@@ -10,9 +10,9 @@ All numbers come from `scripts/wiki_interest.py`. **Never compute metrics yourse
 write your own code for the data work. Run the script and interpret its JSON.**
 
 ## Hard rules (check your answer against them before sending)
-1. Use each series' `verdict` as is. `headlines` gives one line per series that you can
-   quote or translate. Do not upgrade it: `slow_growth` is not "growing", and `stable` is
-   not "growing".
+1. Use each series' `verdict` as is. `headlines` gives one ready-made line per series in the
+   user's language: quote it, do not re-translate it. Do not upgrade it: `slow_growth`
+   («повільно зростає») is not "growing", and `stable` («стабільний») is not "growing".
 2. Give `confidence` with its main `reasons` for every series you conclude on.
 3. Causes: the data shows *when* (a spike date, a peak month), never *why*. State facts
    ("spike on 2025-03-03, 37× baseline"). If you add a possible reason, label it explicitly
@@ -21,6 +21,12 @@ write your own code for the data work. Run the script and interpret its JSON.**
 5. Pageviews show interest, not demand. Recommend next validation steps.
 6. When you make a chart or PDF, give its path in the answer. With `demo_data: true`, say
    that the data is synthetic.
+7. Answer in the user's language. In Ukrainian write literary Ukrainian: reuse the wording
+   of `headlines`/`reasons`, use the terms listed in `answer_checklist` (full list:
+   `references/uk_style.md`), no Russian words, no English words inside sentences
+   (quote article titles: «Intermittent fasting»). This covers every message, including
+   progress notes: «Вікіпедія» not "Wikipedia", «навичка» not "skill", heading «Головні
+   висновки» not «Ключові знахідки».
 
 ## Setup (once)
 ```bash
@@ -43,6 +49,8 @@ charts and PDFs land next to the user.
    ```bash
    python <skill_dir>/scripts/wiki_interest.py analyze --topics "Intermittent fasting" --langs pl,cs --months 24
    ```
+   `--ui-lang uk` (default) writes `headlines`, `reasons` and chart labels in Ukrainian;
+   use `--ui-lang en` when the user writes in any other language.
    Check `topics[].label/description` is the thing the user meant. If it is wrong (e.g. a
    film with the same name), rerun with a better name, a `Q` id from `other_candidates`, or
    `lang:Article`.
@@ -54,7 +62,15 @@ charts and PDFs land next to the user.
    It uses the **last analyze run**: table, chart, caveats and methodology are filled in
    automatically. You only write the title, a 2–5 sentence summary with numbers, 1–4
    recommendations and the user's own criteria/assumptions (`--assumption`). Write them in
-   the user's language; `--ui-lang uk|en` sets the labels.
+   the user's language; `--ui-lang uk|en` sets the labels. If the output has
+   `language_warnings`, fix those phrases and rerun `report` with the same `--out`.
+
+Example of the answer style in Ukrainian (numbers come from `headlines`):
+> У польськомовній Вікіпедії інтерес до теми «Intermittent fasting» спадає: тренд −18% на
+> рік (95% ДІ: від −20 до −17), вище, ніж рік тому, 0 з 12 місяців. Довіра до висновку
+> висока. У чеськомовній спад такий самий (−19%): різниця перебуває в межах довірчих
+> інтервалів. Перегляди статей показують інтерес, а не готовність платити, тому наступний
+> крок — опитування або рекламний тест.
 
 ## Reading the JSON
 Start from `headlines` (one line per series). With several topics, `combined` has one series per

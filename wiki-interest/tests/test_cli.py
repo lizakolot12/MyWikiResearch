@@ -37,6 +37,25 @@ def test_full_flow(tmp_path, capsys, fake_api):
                     "--summary", "Коротко.", "--rec", "Одна.", "--out", str(pdf))
     assert code == 0 and pdf.exists()
     assert len(re.findall(rb"/Type\s*/Page[^s]", pdf.read_bytes())) == 1  # one page
+    assert "language_warnings" not in json.loads(out)
+
+    # Calques in the agent's own text come back as warnings (the PDF is still written).
+    code, out = run(capsys, "--cache-dir", cache, "report", "--title", "Тест",
+                    "--summary", "Інтерес у чеському виданні зростає рік на рік, і це "
+                    "знаходиться в межах похибки.", "--out", str(pdf))
+    warnings = " ".join(json.loads(out)["language_warnings"])
+    assert code == 0 and "рік на рік" in warnings and "знаходиться" in warnings
+
+
+def test_headlines_follow_ui_lang(tmp_path, capsys, fake_api):
+    args = ["--cache-dir", str(tmp_path / "c"), "analyze", "--topics", "Astronomy",
+            "--langs", "uk", "--out", str(tmp_path)]
+    r = json.loads(run(capsys, *args)[1])
+    assert "довіра до висновку" in r["headlines"][0]
+    assert "СИНТЕТИЧНІ" in r["warning"]
+    assert any("Гіпотеза для перевірки" in c for c in r["answer_checklist"])
+    r = json.loads(run(capsys, *args, "--ui-lang", "en")[1])
+    assert "confidence" in r["headlines"][0] and not re.search("[а-я]", r["headlines"][0])
 
 
 def test_missing_article_and_bad_topic(tmp_path, capsys, fake_api):

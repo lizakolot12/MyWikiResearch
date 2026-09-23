@@ -255,61 +255,6 @@ def analyze_series(daily: dict[date, int], totals: dict[date, int],
     return out
 
 
-REASONS = {
-    "en": {
-        "no_trend": "fewer than 6 months of data",
-        "not_significant": "trend {g:+.0f}%/yr is not statistically significant (p={p:.2f})",
-        "tiny_base": "very small audience ({base} views/day): noise dominates",
-        "small_base": "small audience ({base} views/day)",
-        "spiky": "{share:.0%} of views came from one-off spikes (news/virality)",
-        "short": "only {months} months analysed",
-        "new_article": "article has views only since {since}",
-        "rel_contradicts": "relative to the whole edition's traffic the trend is {rel:+.0f}%/yr: "
-                           "the change mostly reflects overall traffic of this Wikipedia",
-        "yoy_contradicts": "latest year-over-year change ({yoy:+.0f}%) contradicts the trend",
-        "no_season_check": "< 24 months: seasonality not checked",
-        "seasonal": "strong seasonality (peak in {peak}, x{amp} vs low month); "
-                    "trend is seasonally adjusted",
-        "wide_ci": "wide uncertainty ({lo:+.0f}%..{hi:+.0f}%/yr)",
-        "redirects_capped": "only {used} of {total} redirects counted",
-        "topics_disagree": "topics move in different directions ({up} up, {down} down, "
-                           "{flat} flat/unclear of {n})",
-    },
-    "uk": {
-        "no_trend": "менше 6 місяців даних",
-        "not_significant": "тренд {g:+.0f}%/рік статистично не значущий (p={p:.2f})",
-        "tiny_base": "дуже мала аудиторія ({base} переглядів/день): шум переважає",
-        "small_base": "мала аудиторія ({base} переглядів/день)",
-        "spiky": "{share:.0%} переглядів дали разові сплески (новини/віральність)",
-        "short": "проаналізовано лише {months} міс.",
-        "new_article": "стаття має перегляди лише з {since}",
-        "rel_contradicts": "відносно всього трафіку розділу тренд {rel:+.0f}%/рік: зміна "
-                           "здебільшого відображає загальний трафік цієї Вікіпедії",
-        "yoy_contradicts": "остання зміна рік до року ({yoy:+.0f}%) суперечить тренду",
-        "no_season_check": "< 24 міс.: сезонність не перевірено",
-        "seasonal": "сильна сезонність (пік: {peak}, x{amp} до найнижчого місяця); "
-                    "тренд скориговано на сезонність",
-        "wide_ci": "велика невизначеність ({lo:+.0f}%..{hi:+.0f}%/рік)",
-        "redirects_capped": "враховано лише {used} з {total} редиректів",
-        "topics_disagree": "теми рухаються в різні боки ({up} вгору, {down} вниз, "
-                           "{flat} без чіткого тренду з {n})",
-    },
-}
-
-
-MONTHS = {
-    "en": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    "uk": ["січень", "лютий", "березень", "квітень", "травень", "червень", "липень", "серпень",
-           "вересень", "жовтень", "листопад", "грудень"],
-}
-
-
-def reason_text(code: str, params: dict, lang: str = "en") -> str:
-    if code == "seasonal":
-        params = {**params, "peak": MONTHS.get(lang, MONTHS["en"])[params["peak"] - 1]}
-    return REASONS.get(lang, REASONS["en"])[code].format(**params)
-
-
 def _plain(o):
     """Convert numpy scalars to Python types so results serialize to JSON."""
     if isinstance(o, dict):
@@ -324,7 +269,7 @@ def _plain(o):
 def judge(r: dict) -> tuple[str, str, list[list]]:
     """Turn metrics into a direction verdict, a high/medium/low confidence and reasons.
 
-    Reasons are [code, params] pairs; see REASONS for their text.
+    Reasons are [code, params] pairs; see i18n.REASONS for their text.
     """
     reasons: list[list] = []
     score = 3

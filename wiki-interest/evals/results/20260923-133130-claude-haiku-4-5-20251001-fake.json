@@ -1,0 +1,193 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "fake": true,
+ "results": [
+  {
+   "id": "fasting_pl_cs",
+   "passed": false,
+   "checks": {
+    "used_script": true,
+    "no_custom_code": true,
+    "langs": true,
+    "months": true,
+    "mentions_any": true,
+    "max_turns": true,
+    "mentions_demo": true,
+    "uk_language": false,
+    "judge_verdict_fidelity": true,
+    "judge_numbers_correct": true,
+    "judge_confidence_stated": true,
+    "judge_no_invented_causes": false,
+    "judge_limitations": true,
+    "judge_literary_language": false
+   },
+   "turns": 4,
+   "cost_usd": 0.0376039,
+   "seconds": 31.1,
+   "answer": "Я допоможу вам порівняти інтерес до інтервального голодування на польській та чеській Wikipedia. Для цього скористаюся навичкою аналізу Вікіпедії.\n\nДякую за дозвіл! Дані, які я отримав — це **синтетичні демо-дані**, тому тримайте це на увазі, однак методологія аналізу відповідає справжньому процесу.\n\n## Результати\n\n**У польськомовній Вікіпедії:** інтерес СПАДАЄ, тренд −18%/рік (95% ДІ: від −20 до −17). Всі 12 місяців останнього року показали нижчі переглади порівняно з рік тому (0 з 12 місяців вище). Переглядів за день: 1 389 (159 на мільйон переглядів розділу). **Довіра до висновку ВИСОКА**.\n\n**У чеськомовній Вікіпедії:** інтерес також СПАДАЄ, тренд −19%/рік (95% ДІ: від −20 до −18). Однаково — 0 з 12 місяців вище, ніж рік тому. Переглядів за день: 236 (81 на мільйон переглядів розділу). **Довіра до висновку ВИСОКА**.\n\n## Порівняння\n\nТренди практично ідентичні: різниця (−18% проти −19%) перебуває в межах довірчих інтервалів, тому обидва мовні розділи втрачають інтерес до теми «Intermittent fasting» одночасно і з однаковою швидкістю.\n\nОбидва розділи мають **виразну сезонність** — пік інтересу припадає на січень (у 2,1 раза більше, ніж найслабший місяць липень), що корелює з новорічними намірами щодо здоров'я.\n\nПольськомовна Вікіпедія бачить вище значення абсолютних переглядів (1 389 проти 236 щодня), але польський розділ у цілому більший. На мільйон переглядів розділу рахунок інший: 159 у польськомовному та 81 у чеськомовному.\n\n## Наступні кроки\n\nПерегляди статей показують **інтерес**, а не готовність платити або використовувати сервіси. Щоб зрозуміти, що стоїть за спадом, варто:\n- Опитати користувачів про причини втрати інтересу\n- Перевірити, чи не змінилася освітленість теми в традиційних ЗМІ\n- Провести тестування реклами в інших каналах\n\n**Графік доступний тут:** `/tmp/wi-eval-fasting_pl_cs-rd8ts19i/wiki-interest-output/chart-20260923-132621.png`",
+   "language_warnings": [
+    "Wikipedia → «Вікіпедія» у тексті (Wikipedia лише в назвах)"
+   ],
+   "judge_notes": "Answer states the January peak 'correlates with New Year health resolutions' as fact instead of labeling it a hypothesis, and contains a Ukrainian grammar/spelling slip ('порівняно з рік тому', 'переглади' instead of 'перегляди').",
+   "commands": [
+    "python .claude/skills/wiki-interest/scripts/wiki_interest.py analyze --topics \"Intermittent fasting\" --langs pl,cs --months 24 --ui-lang uk"
+   ],
+   "workspace": "/tmp/wi-eval-fasting_pl_cs-rd8ts19i"
+  },
+  {
+   "id": "fasting_add_slovak",
+   "passed": false,
+   "checks": {
+    "used_script": true,
+    "no_custom_code": true,
+    "langs": true,
+    "months": true,
+    "max_turns": true,
+    "mentions_demo": true,
+    "uk_language": true,
+    "judge_verdict_fidelity": true,
+    "judge_numbers_correct": true,
+    "judge_confidence_stated": true,
+    "judge_no_invented_causes": true,
+    "judge_limitations": false,
+    "judge_literary_language": true
+   },
+   "turns": 2,
+   "cost_usd": 0.061938900000000005,
+   "seconds": 25.6,
+   "answer": "## Оновлені результати на 3 роки\n\n**Це синтетичні демо-дані** — методологія відповідає справжньому аналізу.\n\n### Тренди за мовами\n\n**Польська Вікіпедія:** інтерес СПАДАЄ, тренд −17,5%/рік (95% ДІ: від −18,1 до −16,9). 0 з 24 місяців показали зростання порівняно з рік тому. Переглядів за день: 1 389. **Довіра до висновку ВИСОКА**.\n\n**Чеська Вікіпедія:** інтерес СПАДАЄ, тренд −19,3%/рік (95% ДІ: від −19,8 до −18,8). 0 з 24 місяців вище, ніж рік тому. Переглядів за день: 236. **Довіра до висновку ВИСОКА**.\n\n**Словацька Вікіпедія:** інтерес ЗРОСТАЄ, тренд +19,6%/рік (95% ДІ: від +18,2 до +21,0). **Всі 24 місяці вище, ніж рік тому!** Переглядів за день: 131. **Довіра до висновку СЕРЕДНЯ** (мала аудиторія; виразна сезонність скориговано в тренді).\n\n### Ключові різниці\n\nСловацькомовна Вікіпедія демонструє прямо протилежну закономірність порівняно з польською та чеською. Тоді як польські і чеські розділи втрачають читачів послідовно (0 місяців зростання протягом 2 років), словацька показує **послідовне зростання** всіх 24 місяців.\n\nОднак довіра до словацького висновку — лише **середня**, тому що абсолютна аудиторія там невелика (131 перегляд на день проти 1 389 у польськомовній). На мільйон переглядів розділу словацька рахує 171 — це вища питома вага, ніж у польської (159), але меншу абсолютну базу.\n\n**Гіпотеза для перевірки:** чи словацька спільнота розповсюджує знання про інтервальне голодування (можливо, через місцеву блогосферу, інстаграм-впливальників), тоді як у Польщі та Чехії тема вже пройшла пік популярності?\n\nВсі три розділи мають однакову **виразну сезонність** — січень (пік, у 2,2–2,3 раза більше) та липень (найнижчі значення).\n\n**Новий графік:** `/tmp/wi-eval-fasting_pl_cs-rd8ts19i/wiki-interest-output/chart-20260923-132717.png`",
+   "language_warnings": [],
+   "judge_notes": "ANSWER never states that pageviews reflect interest rather than demand/willingness-to-pay or suggests validation, so the limitations criterion is violated.",
+   "commands": [
+    "python .claude/skills/wiki-interest/scripts/wiki_interest.py analyze --topics \"Intermittent fasting\" --langs pl,cs,sk --months 36 --ui-lang uk"
+   ],
+   "workspace": "/tmp/wi-eval-fasting_pl_cs-rd8ts19i"
+  },
+  {
+   "id": "astronomy_uk_trust",
+   "passed": false,
+   "checks": {
+    "used_script": true,
+    "no_custom_code": true,
+    "langs": true,
+    "mentions_any": true,
+    "max_turns": true,
+    "mentions_demo": true,
+    "uk_language": false,
+    "judge_verdict_fidelity": true,
+    "judge_numbers_correct": true,
+    "judge_confidence_stated": true,
+    "judge_no_invented_causes": false,
+    "judge_limitations": true,
+    "judge_literary_language": false
+   },
+   "turns": 7,
+   "cost_usd": 0.054566500000000004,
+   "seconds": 42.7,
+   "answer": "Це чудове питання для валідації ідеї! Використаю skill для аналізу інтересу до астрономії в україномовній Wikipedia на основі даних про переглядів.\n\nАналізую інтерес до астрономії в україномовній Wikipedia за останні два роки.\n\nЗалучу цей результат до PDF-звіту для вашої команди.\n\n## Висновки\n\n**Важливо:** це синтетичні демо-дані для тестування системи, а не справжня Вікіпедія.\n\nУ українськомовній Вікіпедії інтерес до астрономії **спадає**: тренд −14% на рік (95% ДІ: від −15 до −12). Жодного з 12 місяців у межах останніх двох років не було більше переглядів, ніж рік тому. **Довіра до висновку висока** — спад послідовний і статистично значущий.\n\n### На що звернути увагу:\n\n1. **Спад послідовний.** Це не результат одного сплеску або сезонної коливання — інтерес рівномірно знижується протягом усього періоду.\n\n2. **Перегляди показують інтерес, не попит.** Скорочення переглядів статті про астрономію відбиває зміну читацької поведінки, але не доводить, що учні не хочуть вчити астрономію. Це сигнал до дії, а не остаточна відповідь.\n\n3. **Рекомендовані кроки валідації:**\n   - Проведіть опитування українських учнів чи вчителів про інтерес до астрономіï\n   - Перевірте, чи яскравіші тренди на інших мовних розділах (англійська, російська Вікіпедія)\n   - Протестуйте курс з невеликою групою перед масштабуванням\n\nЗвіт з деталями знаходиться вище.",
+   "language_warnings": [
+    "знаходиться → «перебуває», «є» або «у межах»",
+    "Wikipedia → «Вікіпедія» у тексті (Wikipedia лише в назвах)",
+    "skill → англійські слова посеред українського речення: перекладіть або візьміть у лапки назву статті"
+   ],
+   "judge_notes": "Answer states 'зміна читацької поведінки' as an unlabeled cause and uses the English word 'skill' plus a gender-agreement error ('сезонної коливання') in the Ukrainian text.",
+   "commands": [
+    "python .claude/skills/wiki-interest/scripts/wiki_interest.py analyze --topics \"Astronomy\" --langs uk --months 24 --ui-lang uk",
+    "python .claude/skills/wiki-interest/scripts/wiki_interest.py report \\\n  --title \"Інтерес до астрономії: аналіз украї­номовної Wikipedia\" \\\n  --summary \"У україномовній Вікіпедії інтерес до астрономії спадає на 14% на рік. Жодного місяця протягом останніх двох років не було більше переглядів, ніж рік тому. Попри стійкий спад, висока довіра до висновку завдяки консистентності даних.\" \\\n  --rec \"Перед запуском курсу проведіть опитування українських учнів щодо інтересу до астрономії.\" \\\n  --rec \"Розгляньте потенціал локалізації контенту з англомовної або російськомовної Вікіпедії — можливо, учні вже шукають матеріали іншими мовами.\" \\\n  --rec \"Обмежте вихідну аудиторію активними користувачами Вікіпедії та однозначно валідуйте попит перед масштабуванням.\" \\\n  --assumption \"Дані — синтетичні демо-дані для тестування системи.\" \\\n  --out wiki-interest-report.pdf \\\n  --ui-lang uk",
+    "python .claude/skills/wiki-interest/scripts/wiki_interest.py report \\\n  --title \"Інтерес до астрономії: аналіз українськомовної Вікіпедії\" \\\n  --summary \"У українськомовній Вікіпедії інтерес до астрономії спадає на 14% на рік. Жодного місяця протягом останніх двох років не було більше переглядів, ніж рік тому. Попри стійкий спад, висока довіра до висновку завдяки консистентності даних.\" \\\n  --rec \"Перед запуском курсу проведіть опитування українських учнів щодо інтересу до астрономії.\" \\\n  --rec \"Розгляньте потенціал локалізації контенту з англомовної або інших мовних розділів Вікіпедії — можливо, учні вже шукають матеріали іншими мовами.\" \\\n  --rec \"Обмежте вихідну аудиторію активними користувачами Вікіпедії та однозначно валідуйте попит перед масштабуванням.\" \\\n  --assumption \"Дані — синтетичні демо-дані для тестування системи.\" \\\n  --out wiki-interest-report.pdf \\\n  --ui-lang uk"
+   ],
+   "workspace": "/tmp/wi-eval-astronomy_uk_trust-b2wgi5xr"
+  },
+  {
+   "id": "english_learning_report",
+   "passed": false,
+   "checks": {
+    "used_script": true,
+    "no_custom_code": true,
+    "langs": true,
+    "mentions_any": true,
+    "pdf": true,
+    "max_turns": true,
+    "mentions_demo": true,
+    "uk_language": false,
+    "judge_verdict_fidelity": true,
+    "judge_numbers_correct": true,
+    "judge_confidence_stated": true,
+    "judge_no_invented_causes": true,
+    "judge_limitations": false,
+    "judge_literary_language": false
+   },
+   "turns": 6,
+   "cost_usd": 0.054051699999999994,
+   "seconds": 44.3,
+   "answer": "Я використаю skill для аналізу інтересу на Wikipedia й підготую звіт з рекомендаціями щодо аудиторій для вивчення англійської.\n\nРозумію. Проаналізую інтерес до вивчення англійської в цих мовних версіях Wikipedia і підготую PDF-звіт.\n\nДавайте створю PDF-звіт з цих даних.\n\nГотово! Ось результати аналізу (⚠️ **це синтетичні демо-дані**):\n\n## Основні висновки\n\n**Позитивна динаміка у 3 аудиторіях:**\n\n- **Польська** (🥇): інтерес **зростає** +17%/рік, 12 з 12 місяців вище, 2068 переглядів за день. Довіра **висока**.\n- **Українська** 🥈: інтерес **зростає** +15%/рік, 12 з 12 місяців вище, найвища концентрація (331 на мільйон переглядів). Довіра **висока**.\n- **Німецька** 🥉: інтерес **зростає** +15%/рік, найбільші абсолютні числа (4508 переглядів за день). Довіра **висока**.\n\n**Протилежна тенденція:**\n\n- **Чеська**: інтерес **спадає** −18%/рік, 0 з 12 місяців вище. Довіра **висока**.\n\n## Рекомендації для застосунку вивчення мов\n\n1. **Першочергово**: польськомовна аудиторія — найстійкіше зростання\n2. **Найбільш зацікавлена**: українськомовна спільнота (найвища частка на мільйон)\n3. **Найбільший ринок**: німецькомовна аудиторія (за абсолютними числами)\n4. **Для дослідження**: чому чеська аудиторія втрачає інтерес?\n\n📊 **Детальний звіт**: `/tmp/wi-eval-english_learning_report-qlgxaedg/english-learning-report.pdf`",
+   "language_warnings": [
+    "Wikipedia → «Вікіпедія» у тексті (Wikipedia лише в назвах)",
+    "skill → англійські слова посеред українського речення: перекладіть або візьміть у лапки назву статті"
+   ],
+   "judge_notes": "Answer never notes pageviews reflect interest not demand/willingness to pay nor suggests validation, and it uses English words ('Wikipedia', 'skill') mid-sentence instead of 'Вікіпедія'.",
+   "commands": [
+    "pip install -q -r /tmp/wi-eval-english_learning_report-qlgxaedg/.claude/skills/wiki-interest/requirements.txt",
+    "python /tmp/wi-eval-english_learning_report-qlgxaedg/.claude/skills/wiki-interest/scripts/wiki_interest.py analyze --topics \"English language\" --langs pl,cs,uk,de --months 24 --ui-lang uk",
+    "python /tmp/wi-eval-english_learning_report-qlgxaedg/.claude/skills/wiki-interest/scripts/wiki_interest.py report \\\n  --title \"Інтерес до вивчення англійської: порівняння мовних спільнот\" \\\n  --summary \"У польській, українській та німецькій Вікіпедії інтерес до теми англійської мови зростає: +17%, +15% і +15% на рік відповідно, 12 місяців з 12 вище рівня року тому. Довіра до висновків висока. Натомість у чеській Вікіпедії спостерігається спадання на −18% на рік. Це синтетичні демо-дані.\" \\\n  --rec \"Першочергово розглянути польськомовну аудиторію: найбільший темп зростання (+17%) та послідовне місячне зростання протягом двох років свідчать про стійкий попит на контент про англійську.\" \\\n  --rec \"Розвивати українськомовний ринок: вища частка переглядів на мільйон переглядів розділу (331 проти 242 в польськомовній) вказує на більш концентровану аудиторію зацікавлених користувачів.\" \\\n  --rec \"Дослідити причини спадання в чеській Вікіпедії: від'ємний тренд (−18%) контрастує з іншими мовами й потребує аналізу (можливі конкуренти, демографічні чинники, якість контенту).\" \\\n  --rec \"Розглядати німецькомовну аудиторію як перспективну: найбільші абсолютні числа переглядів (4508 за день) й зростання +15% відбивають великий потенціал ринку.\" \\\n  --assumption \"Перегляди статей Вікіпедії відбивають інтерес потенційної аудиторії, але не готовність платити. Наступний крок: опитування польськомовних та українськомовних користувачів про інтерес до платних курсів або додаткових ресурсів.\" \\\n  --out english-learning-report.pdf \\\n  --ui-lang uk"
+   ],
+   "workspace": "/tmp/wi-eval-english_learning_report-qlgxaedg"
+  },
+  {
+   "id": "eclipse_spike",
+   "passed": true,
+   "checks": {
+    "used_script": true,
+    "no_custom_code": true,
+    "langs": true,
+    "mentions_any": true,
+    "max_turns": true,
+    "mentions_demo": true,
+    "judge_verdict_fidelity": true,
+    "judge_numbers_correct": true,
+    "judge_confidence_stated": true,
+    "judge_no_invented_causes": true,
+    "judge_limitations": true,
+    "judge_literary_language": true
+   },
+   "turns": 4,
+   "cost_usd": 0.0327859,
+   "seconds": 23.2,
+   "answer": "I'll use the wiki-interest skill to measure solar eclipse interest trends across Polish and German Wikipedia for you.\n\nI'll analyze solar eclipse interest trends in Polish and German Wikipedia using the wiki-interest tool.\n\n**Important:** This analysis uses **synthetic demo data** — not real Wikipedia statistics. The patterns shown are illustrative; real data would require production access.\n\n## Interest Trends\n\n**Polish Wikipedia** shows a **slow decline**: down 10% per year (95% CI: −11% to −9%), with all 12 months lower than the same period last year. Daily viewership sits at ~1,990 readers, with high confidence in this downward trend.\n\n**German Wikipedia** is **stable**: the trend is nearly flat at −2% per year (95% CI: −3% to −0%), with 5 of 12 months actually tracking higher than last year. German Wikipedia has a larger audience for this topic (~4,991 daily views).\n\n## Spikes\n\nBoth editions show dramatic spikes around **March 3, 2025** (38–40× baseline), likely correlated with a solar eclipse event. Polish also shows a secondary spike on November 20, 2025 (40× baseline). These news-driven spikes account for ~10–14% of views.\n\n## For Your Feature Decision\n\n**Pageviews measure interest, not demand** — you're seeing search behavior, not willingness to use an astronomy-events feature. The downward trend in Polish suggests declining passive interest in the article, while German remains steady.\n\n**Validation next steps:**\n- Survey users: \"Would you use a feature to find upcoming eclipses?\"\n- A/B test with a small landing page linking to eclipse times\n- Check whether traffic drops *after* eclipse events (one-time interest) or if it's sustained (ongoing engagement)\n\nSee the chart at: `/tmp/wi-eval-eclipse_spike-hwypczpl/wiki-interest-output/chart-20260923-133025.png`",
+   "language_warnings": [],
+   "judge_notes": "Answer correctly preserves verdicts, cites matching numbers, states high confidence with CIs, hedges the eclipse-spike explanation as 'likely correlated' (allowed event-driven framing), and flags pageviews-vs-demand with concrete validation steps.",
+   "commands": [
+    "python /tmp/wi-eval-eclipse_spike-hwypczpl/.claude/skills/wiki-interest/scripts/wiki_interest.py analyze --topics \"solar eclipse\" --langs pl,de --months 24 --ui-lang en"
+   ],
+   "workspace": "/tmp/wi-eval-eclipse_spike-hwypczpl"
+  },
+  {
+   "id": "tiny_topic_low_confidence",
+   "passed": true,
+   "checks": {
+    "used_script": true,
+    "no_custom_code": true,
+    "langs": true,
+    "mentions_any": true,
+    "max_turns": true,
+    "mentions_demo": true,
+    "judge_verdict_fidelity": true,
+    "judge_numbers_correct": true,
+    "judge_confidence_stated": true,
+    "judge_no_invented_causes": true,
+    "judge_limitations": true,
+    "judge_literary_language": true
+   },
+   "turns": 4,
+   "cost_usd": 0.0315706,
+   "seconds": 20.3,
+   "answer": "## **⚠️ This is synthetic demo data — not real Wikipedia pageview data.**\n\nInterest in quipu shows signs of growth in both Slovak and Czech Wikipedia, but confidence in this signal is **very low**:\n\n| Language | Trend | Confidence | Audience |\n|---|---|---|---|\n| **Slovak** | +40%/yr (95% CI: +31..+50) | LOW | 8 views/day |\n| **Czech** | +17%/yr (95% CI: +11..+23) | LOW | 9 views/day |\n\n**Why confidence is low:** Both audiences are tiny (8–9 daily views). With such small numbers, random fluctuations easily create the illusion of growth. In Slovak, 23 months were analyzed instead of 24, so seasonality patterns can't be ruled out.\n\n**On course viability:** Pageview growth tells you interest *exists*, not whether enough demand exists for a paid course. Before investing in content, I'd recommend:\n\n1. **Survey** — Ask 10–20 people in both countries: \"Would you pay for/take a free course on quipu?\" to learn if pageviews reflect real need.\n2. **Landing page test** — Build a simple landing page, run cheap ads in Slovak/Czech, measure sign-ups—this shows intent to learn.\n3. **Wait for more data** — A second look in 6 months with a full 24-month window and stable, higher audience numbers will be much more trustworthy.\n\n**Chart:** /tmp/wi-eval-tiny_topic_low_confidence-7xl12f8s/wiki-interest-output/chart-20260923-133105.png\n\nThe trend direction looks promising, but the signal is currently too weak to base a course launch on.",
+   "language_warnings": [],
+   "judge_notes": "Answer correctly uses 'growing' verdict with low confidence, matches all cited numbers to FACTS, states confidence reasons, avoids inventing causes, flags pageviews-vs-demand limitation with validation steps, and is in English so literary_language is vacuously satisfied.",
+   "commands": [
+    "python /tmp/wi-eval-tiny_topic_low_confidence-7xl12f8s/.claude/skills/wiki-interest/scripts/wiki_interest.py analyze --topics \"quipu\" --langs sk,cs --months 24 --ui-lang en"
+   ],
+   "workspace": "/tmp/wi-eval-tiny_topic_low_confidence-7xl12f8s"
+  }
+ ]
+}

@@ -20,11 +20,15 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
 
 import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from wikitrend.lang_check import allowed_words, check_uk, is_ukrainian  # noqa: E402
 
 SKILL = Path(__file__).resolve().parent.parent
 TOOLS = "Bash,Read,Write,Edit,Glob,Grep,Skill"
@@ -39,8 +43,12 @@ Grade each criterion 1 (met) or 0 (violated):
   (competition, migration, marketing...). Reasons explicitly labelled as a hypothesis to
   check are fine; so is calling a dated spike "event-driven attention".
 - limitations: ANSWER notes that pageviews are interest, not demand, or recommends validation.
+- literary_language: if ANSWER is in Ukrainian, it is literary Ukrainian: no Russian words,
+  no calques from Russian or English (e.g. «року на року», «знаходиться в межах», «видання»
+  for a Wikipedia language edition, «в 2,1 рази»), no English words inside sentences (article
+  titles in quotes are fine), grammatical agreement. 1 if ANSWER is not in Ukrainian.
 Reply with JSON only: {"verdict_fidelity":0|1,"numbers_correct":0|1,"confidence_stated":0|1,
-"no_invented_causes":0|1,"limitations":0|1,"notes":"<one sentence>"}
+"no_invented_causes":0|1,"limitations":0|1,"literary_language":0|1,"notes":"<one sentence>"}
 
 FACTS:
 %s
@@ -148,6 +156,8 @@ def score(res: dict, checks: dict, ws: Path, fake: bool) -> dict:
         out["max_turns"] = (res.get("turns") or 99) <= checks["max_turns"]
     if fake:
         out["mentions_demo"] = any(s in answer for s in ("demo", "демо", "синтет", "synthetic"))
+    if is_ukrainian(res["answer"]):  # Russianisms, calques, stray English words
+        out["uk_language"] = not check_uk(res["answer"], allowed_words(*res.get("facts", [])))
     return out
 
 
@@ -188,6 +198,8 @@ def main() -> int:
             results.append({"id": step["id"], "passed": passed, "checks": checks,
                             "turns": res.get("turns"), "cost_usd": res.get("cost_usd"),
                             "seconds": res.get("seconds"), "answer": res["answer"],
+                            "language_warnings": check_uk(
+                                res["answer"], allowed_words(*res.get("facts", []))),
                             "judge_notes": notes,
                             "commands": [c["input"].get("command") for c in res["calls"]
                                          if c["tool"] == "Bash"],

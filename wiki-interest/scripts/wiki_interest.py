@@ -23,6 +23,7 @@ from wikitrend.analyze import (RANK_KEYS, compact, load_run, monthly_table,  # n
                                parse_month, run_analysis, save_run)
 from wikitrend.api import ApiError, WikiClient  # noqa: E402
 from wikitrend.cache import DEFAULT_CACHE_DIR, Cache  # noqa: E402
+from wikitrend.lang_check import allowed_words, check_uk  # noqa: E402
 from wikitrend.resolve import parse_langs, resolve_topic  # noqa: E402
 
 
@@ -36,6 +37,13 @@ def topics_arg(values: list[str]) -> list[str]:
     for v in values:
         out += [x.strip() for x in v.split(";") if x.strip()]
     return list(dict.fromkeys(out))
+
+
+def run_words(run: dict) -> set[str]:
+    """Article titles and topic names of a run: fine to quote in Latin script."""
+    return allowed_words(*(f"{s.get('article') or ''} {s.get('topic') or ''}"
+                           for s in run["series"]),
+                         *(t.get("label") or "" for t in run["topics"]))
 
 
 def doctor(client: WikiClient, cache: Cache) -> dict:
@@ -84,7 +92,8 @@ def main(argv=None) -> int:
     sp.add_argument("--no-redirects", action="store_true", help="do not add redirect views")
     sp.add_argument("--rank-by", default="growth", choices=list(RANK_KEYS))
     sp.add_argument("--out", default="wiki-interest-output", help="folder for charts")
-    sp.add_argument("--ui-lang", default="uk", choices=["uk", "en"], help="chart labels")
+    sp.add_argument("--ui-lang", default="uk", choices=["uk", "en"],
+                    help="language of headlines, reasons and chart labels (default uk)")
 
     sp = sub.add_parser("show", help="monthly numbers of a run")
     sp.add_argument("--run", default="last")
@@ -123,7 +132,7 @@ def main(argv=None) -> int:
             if any(s.get("_monthly") for s in run["series"]):
                 run["chart"] = str(save_chart(run, chart, a.ui_lang).resolve())
             save_run(run, Path(a.cache_dir))
-            emit(compact(run))
+            emit(compact(run, a.ui_lang))
         elif a.cmd == "show":
             print(monthly_table(load_run(Path(a.cache_dir), a.run), a.series))
         elif a.cmd == "report":
@@ -136,6 +145,14 @@ def main(argv=None) -> int:
                                 "with verdicts and confidence."}
             if run.get("demo_data"):
                 res["tell_user"] += " Say that the report uses SYNTHETIC DEMO DATA."
+            if a.ui_lang == "uk":
+                warnings = check_uk("\n".join([a.title, a.summary, *a.rec, *a.assumption]),
+                                    run_words(run))
+                if warnings:
+                    res["language_warnings"] = warnings
+                    res["tell_user"] = ("Fix these phrases in your title/summary/recs, rerun "
+                                        "`report` with the same --out, then " +
+                                        res["tell_user"][0].lower() + res["tell_user"][1:])
             emit(res)
         elif a.cmd == "doctor":
             emit(doctor(client, cache))

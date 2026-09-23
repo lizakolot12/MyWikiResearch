@@ -9,6 +9,8 @@
 #   mentions_any       final answer contains at least one of the strings (case-insensitive)
 #   pdf                a PDF was produced by `report`
 #   max_turns          upper bound of agent turns (efficiency on a cheap model)
+#   uk_language        (added automatically for Ukrainian answers) no Russianisms, known
+#                      calques or English words inside sentences (wikitrend/lang_check.py)
 # With --fake the synthetic API is used; the answer must then admit demo data
 # (check `mentions_demo` is added automatically).
 
