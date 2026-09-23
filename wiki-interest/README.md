@@ -7,6 +7,7 @@ Agent Skill (формат `SKILL.md`), яка допомагає засновн�
 
 ```
 wiki-interest/
+  install.py                встановлення однією командою: копія, .venv, залежності, doctor
   SKILL.md                  інструкція для агента (коротка, розрахована на Haiku-клас моделей)
   scripts/wiki_interest.py  єдиний CLI: resolve / analyze / show / report / cache / doctor
   wikitrend/                код, що виконує всю роботу з даними
@@ -26,14 +27,36 @@ wiki-interest/
 ```
 
 ## Встановлення
+Після `git clone` достатньо однієї команди в корені репозиторію (потрібен лише Python 3.10+):
 ```bash
-pip install -r wiki-interest/requirements.txt       # numpy, matplotlib, requests
-python wiki-interest/scripts/wiki_interest.py doctor # перевірка залежностей і доступу до API
+./setup.sh                        # встановити навичку для всіх проєктів: ~/.claude/skills/wiki-interest
+./setup.sh claude haiku           # встановити й одразу відкрити Claude Code на Claude Haiku 4.5
+./setup.sh claude haiku "Чи зростає інтерес до астрономії в українській Вікіпедії?"
 ```
-Щоб агент (Claude Code) знайшов навичку, скопіюйте теку в `.claude/skills/wiki-interest`
-у проєкті або в `~/.claude/skills/`. Скомпільованих файлів немає, залежності мають
-зафіксовані діапазони версій. Кеш зберігається в `wiki-interest/.cache/`, а якщо тека
-навички недоступна для запису, то в `~/.cache/wiki-interest`.
+На Windows те саме робить `setup.cmd`. Замість `haiku` можна вказати `sonnet`, `opus` або
+повний ідентифікатор моделі. Claude Code відкривається в поточній теці, тож графіки й PDF
+з'являться там. `setup.sh` передає всі параметри в `wiki-interest/install.py`, тому
+працюють і параметри нижче (наприклад, `./setup.sh --project . claude haiku`).
+Інсталятор копіює теку навички, створює в ній `.venv` із залежностями з `requirements.txt`
+(системний Python не змінюється) і запускає `doctor`, щоб перевірити доступ до API. Агент
+і далі викликає `python <skill_dir>/scripts/wiki_interest.py ...`: якщо у звичайному Python
+пакетів немає, скрипт сам перезапускається в `.venv` (а Claude Code, запущений через
+`setup.sh claude ...`, одразу отримує `.venv` першим у `PATH`). Повторний запуск оновлює код і
+зберігає кеш.
+
+Інші варіанти:
+- `--link` — символічне посилання замість копії: зміни в репозиторії діють одразу (для розробки);
+- `--dest DIR` — тека навичок іншого агента;
+- `--deps-only` — лише `.venv` у поточній теці навички;
+- `--system-python` — встановити пакети в поточний Python без `.venv`;
+- `--zip wiki-interest.zip` — архів для завантаження в claude.ai (Settings → Capabilities →
+  Skills). Там навичка працює в хмарній пісочниці Anthropic, тож і в мобільних застосунках;
+  numpy та matplotlib там уже є, але доступ до `wikimedia.org` залежить від мережевих
+  налаштувань виконання коду.
+
+Скомпільованих файлів немає, залежності мають зафіксовані діапазони версій. Кеш
+зберігається в `wiki-interest/.cache/`, а якщо тека навички недоступна для запису, то в
+`~/.cache/wiki-interest`.
 
 ## Як це працює для користувача
 Користувач пише: *«Порівняй зростання інтересу до інтервального голодування в польськомовній

@@ -33,8 +33,9 @@ write your own code for the data work. Run the script and interpret its JSON.**
 
 ## Setup (once)
 ```bash
-pip install -r <skill_dir>/requirements.txt      # numpy, matplotlib, requests
+python <skill_dir>/install.py --deps-only        # makes <skill_dir>/.venv with numpy, matplotlib, requests
 ```
+Only if a command prints `"error": "missing Python package"`. The script then uses `.venv` by itself.
 `<skill_dir>` is this skill's folder. Run every command from the user's working directory
 (do not `cd` into the skill), as `python <skill_dir>/scripts/wiki_interest.py ...`, so
 charts and PDFs land next to the user.
