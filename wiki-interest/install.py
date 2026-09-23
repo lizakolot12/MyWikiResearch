@@ -7,6 +7,8 @@
   python install.py --link              symlink instead of copy: edits in this repo apply at once
   python install.py --deps-only         only create .venv here and install dependencies
   python install.py --zip FILE.zip      build an archive to upload to claude.ai (Settings > Skills)
+  python install.py claude haiku        install, then start Claude Code with that model
+  python install.py claude haiku "..."  ... and send it the first request at once
 
 Dependencies go into <skill>/.venv, so the system Python is not touched. The agent still
 runs `python <skill>/scripts/wiki_interest.py ...`: the script switches to .venv by itself.
@@ -80,6 +82,32 @@ def build_zip(out: Path) -> None:
     print(f"-> {out}  (upload it in claude.ai: Settings > Capabilities > Skills)")
 
 
+MODELS = {"haiku": "claude-haiku-4-5-20251001"}  # short names; anything else goes as is
+CLAUDE_HINT = ("Claude Code is not installed. Install it (https://code.claude.com/docs), e.g.\n"
+               "  curl -fsSL https://claude.ai/install.sh | bash\n"
+               "then run this command again.")
+
+
+def launch(agent: list[str], skill: Path, py: Path) -> int:
+    """Start the agent in the current folder; .venv goes first in PATH, so `python` has the deps."""
+    rest = agent[1:]
+    exe = shutil.which("claude")
+    if not exe:
+        print(CLAUDE_HINT)
+        return 1
+    cmd = [exe]
+    if rest:
+        cmd += ["--model", MODELS.get(rest[0].lower(), rest[0])]
+    cmd += rest[1:]  # optional first request
+    env = dict(os.environ)
+    if py.parent.parent.name == ".venv":
+        env["PATH"] = str(py.parent) + os.pathsep + env.get("PATH", "")
+    print(f"-> {' '.join(cmd)}")
+    if os.name == "nt":
+        return subprocess.run(cmd, env=env).returncode
+    os.execve(exe, cmd, env)
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -92,9 +120,15 @@ def main(argv=None) -> int:
     p.add_argument("--system-python", action="store_true",
                    help="pip install into the current Python instead of <skill>/.venv")
     p.add_argument("--no-doctor", action="store_true", help="skip the final self-check")
+    p.add_argument("agent", nargs="*", metavar="claude [MODEL [REQUEST]]",
+                   help="after installing, start Claude Code (MODEL: haiku, sonnet, opus or an id)")
     a = p.parse_args(argv)
 
     if a.zip:
+        if a.agent:
+            p.error("--zip cannot be combined with starting an agent")
+    if a.agent and a.agent[0] != "claude":
+        p.error(f"unknown agent {a.agent[0]!r}: only 'claude' is supported")
         build_zip(a.zip)
         return 0
     if a.deps_only:
@@ -109,7 +143,10 @@ def main(argv=None) -> int:
     if not a.no_doctor:
         print("-> doctor")
         subprocess.run([str(py), str(skill / "scripts" / "wiki_interest.py"), "doctor"])
-    print(f"\nDone. Skill: {skill}\nRestart the agent session so it picks the skill up.")
+    print(f"\nDone. Skill: {skill}")
+    if a.agent:
+        return launch(a.agent, skill, py)
+    print("Start a new agent session (e.g. `claude`) so it picks the skill up.")
     return 0
 
 

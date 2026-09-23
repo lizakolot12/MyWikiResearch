@@ -27,15 +27,21 @@ wiki-interest/
 ```
 
 ## Встановлення
-Одна команда (потрібен лише Python 3.10+, сам інсталятор без залежностей):
+Після `git clone` достатньо однієї команди в корені репозиторію (потрібен лише Python 3.10+):
 ```bash
-python wiki-interest/install.py                  # для всіх проєктів: ~/.claude/skills/wiki-interest
-python wiki-interest/install.py --project .      # лише для цього проєкту: ./.claude/skills/wiki-interest
+./setup.sh                        # встановити навичку для всіх проєктів: ~/.claude/skills/wiki-interest
+./setup.sh claude haiku           # встановити й одразу відкрити Claude Code на Claude Haiku 4.5
+./setup.sh claude haiku "Чи зростає інтерес до астрономії в українській Вікіпедії?"
 ```
+На Windows те саме робить `setup.cmd`. Замість `haiku` можна вказати `sonnet`, `opus` або
+повний ідентифікатор моделі. Claude Code відкривається в поточній теці, тож графіки й PDF
+з'являться там. `setup.sh` передає всі параметри в `wiki-interest/install.py`, тому
+працюють і параметри нижче (наприклад, `./setup.sh --project . claude haiku`).
 Інсталятор копіює теку навички, створює в ній `.venv` із залежностями з `requirements.txt`
 (системний Python не змінюється) і запускає `doctor`, щоб перевірити доступ до API. Агент
 і далі викликає `python <skill_dir>/scripts/wiki_interest.py ...`: якщо у звичайному Python
-пакетів немає, скрипт сам перезапускається в `.venv`. Повторний запуск оновлює код і
+пакетів немає, скрипт сам перезапускається в `.venv` (а Claude Code, запущений через
+`setup.sh claude ...`, одразу отримує `.venv` першим у `PATH`). Повторний запуск оновлює код і
 зберігає кеш.
 
 Інші варіанти:

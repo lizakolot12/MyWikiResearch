@@ -1,0 +1,2 @@
+setup.cmd text eol=crlf
+setup.sh text eol=lf
