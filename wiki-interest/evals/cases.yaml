@@ -1,0 +1,84 @@
+# End-to-end evaluation cases: a real agent (e.g. Claude Haiku 4.5) uses the skill.
+# Run: python evals/run_evals.py --model claude-haiku-4-5-20251001 [--fake] [--only id]
+#
+# Checks (all automatic, from the agent's tool calls and final answer):
+#   used_script        agent ran scripts/wiki_interest.py analyze (not its own code)
+#   no_custom_code     agent did not write/execute its own Python for the data work
+#   langs              every listed language code appears in an analyze call
+#   months             analyze called with this --months value (or default when 24)
+#   mentions_any       final answer contains at least one of the strings (case-insensitive)
+#   pdf                a PDF was produced by `report`
+#   max_turns          upper bound of agent turns (efficiency on a cheap model)
+# With --fake the synthetic API is used; the answer must then admit demo data
+# (check `mentions_demo` is added automatically).
+
+cases:
+  - id: fasting_pl_cs
+    prompt: >-
+      Порівняй зростання інтересу до інтервального голодування в польськомовній та
+      чеськомовній Wikipedia за останні два роки.
+    checks:
+      used_script: true
+      no_custom_code: true
+      langs: [pl, cs]
+      months: 24
+      mentions_any: ["довір", "confidence", "надійн", "впевнен"]
+      max_turns: 12
+
+  - id: astronomy_uk_trust
+    prompt: >-
+      Ми думаємо додати курс з астрономії до освітнього застосунку. Чи зростає інтерес до
+      цієї теми в україномовній Wikipedia, і наскільки цьому зростанню можна довіряти?
+    checks:
+      used_script: true
+      no_custom_code: true
+      langs: [uk]
+      mentions_any: ["довір", "p=", "p-", "значущ", "впевнен", "надійн"]
+      max_turns: 12
+
+  - id: english_learning_report
+    prompt: >-
+      Ми створюємо застосунок для вивчення мов. Порівняй інтерес до вивчення англійської у
+      польській, чеській, українській та німецькій Wikipedia і підготуй короткий PDF-звіт:
+      які аудиторії варто дослідити наступними й чому?
+    checks:
+      used_script: true
+      no_custom_code: true
+      langs: [pl, cs, uk, de]
+      pdf: true
+      mentions_any: ["pdf"]
+      max_turns: 16
+
+  - id: eclipse_spike
+    prompt: >-
+      Is interest in solar eclipses growing in the Polish and German Wikipedia? We are
+      considering an astronomy-events feature.
+    checks:
+      used_script: true
+      no_custom_code: true
+      langs: [pl, de]
+      mentions_any: ["spike", "one-off", "event", "news", "сплеск"]
+      max_turns: 12
+
+  - id: tiny_topic_low_confidence
+    prompt: >-
+      Check whether interest in quipu (Inca knotted cords) is growing in Slovak and Czech
+      Wikipedia over the last 2 years. Should we build a course on it?
+    checks:
+      used_script: true
+      no_custom_code: true
+      langs: [sk, cs]
+      mentions_any: ["low", "small", "noise", "limited", "insufficient"]
+      max_turns: 12
+
+# Multi-turn: the second prompt continues the same conversation (claude --continue).
+followups:
+  - id: fasting_add_slovak
+    after: fasting_pl_cs
+    prompt: А тепер додай словацьку і візьми три роки замість двох.
+    checks:
+      used_script: true
+      no_custom_code: true
+      langs: [pl, cs, sk]
+      months: 36
+      max_turns: 10
